@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cesano Maderno 26/27 - Formazione</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root{
     --bg:#0f172a;
@@ -113,7 +112,15 @@
     <div class="controls">
       <div class="field">
         <label for="module">Modulo</label>
-        <select id="module" class="module"></select>
+        <select id="module" class="module">
+          <option value="4-4-2">4-4-2</option>
+          <option value="4-3-3">4-3-3</option>
+          <option value="4-3-1-2">4-3-1-2</option>
+          <option value="4-2-3-1">4-2-3-1</option>
+          <option value="3-5-2">3-5-2</option>
+          <option value="3-4-3">3-4-3</option>
+          <option value="3-4-1-2">3-4-1-2</option>
+        </select>
       </div>
       <div class="field">
         <label>&nbsp;</label>
@@ -183,11 +190,6 @@
   const moduleSelect = document.getElementById("module");
   const counters = document.getElementById("counters");
   let selection = {}; // slotId -> playerName
-
-  // popola selettore moduli
-  Object.keys(modules).forEach(m=>{
-    const o=document.createElement("option");o.value=m;o.textContent=m;moduleSelect.appendChild(o);
-  });
 
   function xPositions(n){
     if(n===1) return [50];
@@ -281,14 +283,27 @@
   });
   moduleSelect.addEventListener("change",()=>buildFormation(moduleSelect.value));
 
+  function loadHtml2Canvas(){
+    return new Promise((resolve,reject)=>{
+      if(window.html2canvas) return resolve(window.html2canvas);
+      const s=document.createElement("script");
+      s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+      s.onload=()=>resolve(window.html2canvas);
+      s.onerror=()=>reject();
+      document.head.appendChild(s);
+    });
+  }
+
   document.getElementById("export").addEventListener("click",()=>{
     const card=document.querySelector(".pitch-card");
-    html2canvas(card,{backgroundColor:"#1e293b",scale:2}).then(canvas=>{
+    loadHtml2Canvas().then(h2c=>{
+      return h2c(card,{backgroundColor:"#1e293b",scale:2});
+    }).then(canvas=>{
       const a=document.createElement("a");
       a.download="cesano-maderno-"+moduleSelect.value+".png";
       a.href=canvas.toDataURL("image/png");
       a.click();
-    }).catch(()=>alert("Export non riuscito: serve una connessione per caricare la libreria immagine."));
+    }).catch(()=>alert("Export non riuscito: per scaricare l'immagine serve una connessione a internet (viene caricata una libreria)."));
   });
 
   // init

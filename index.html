@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Formazione Cesano Maderno</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#e9efe6;
+    --panel:#ffffff;
+    --panel-2:#f2f6ef;
+    --line:#d7e0d1;
+    --text:#15201a;
+    --muted:#5c6b60;
+    --accent:#15803d;
+    --accent-ink:#ffffff;
+    --shadow:0 6px 18px rgba(18,40,26,.10);
+    --p:#e08a00;
+    --d:#2563eb;
+    --c:#15a34a;
+    --a:#e11d48;
+    --bench:#5b6b7a;
+    --grass-1:#3a9a4e;
+    --grass-2:#358f45;
+    --chalk:rgba(255,255,255,.6);
+    --chalk-soft:rgba(255,255,255,.4);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0d1411;
+      --panel:#16201b;
+      --panel-2:#1b2822;
+      --line:#28362e;
+      --text:#e6efe8;
+      --muted:#9bad9f;
+      --accent:#2fbf68;
+      --accent-ink:#062012;
+      --bench:#8595a4;
+      --shadow:0 8px 22px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d1411;
+    --panel:#16201b;
+    --panel-2:#1b2822;
+    --line:#28362e;
+    --text:#e6efe8;
+    --muted:#9bad9f;
+    --accent:#2fbf68;
+    --accent-ink:#062012;
+    --bench:#8595a4;
+    --shadow:0 8px 22px rgba(0,0,0,.45);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Barlow","Segoe UI",system-ui,sans-serif;
+    -webkit-text-size-adjust:100%;
+    padding:16px 14px 40px;
+  }
+  .wrap{max-width:1000px;margin:0 auto;}
+
+  header.top{margin-bottom:14px;}
+  .eyebrow{
+    font-family:"Barlow Condensed",sans-serif;
+    text-transform:uppercase;letter-spacing:.18em;
+    font-weight:600;font-size:12px;color:var(--accent);
+    display:flex;align-items:center;gap:8px;
+  }
+  h1{
+    font-family:"Barlow Condensed",sans-serif;
+    text-transform:uppercase;letter-spacing:.01em;
+    font-weight:700;font-size:clamp(28px,7vw,42px);
+    line-height:.98;margin:2px 0 0;text-wrap:balance;
+  }
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:14px 0 16px;}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field label{
+    font-family:"Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.12em;
+    font-size:11px;font-weight:600;color:var(--muted);
+  }
+  select.module,button{
+    font-family:"Barlow",sans-serif;font-size:15px;font-weight:600;
+    color:var(--text);background:var(--panel);
+    border:1.5px solid var(--line);border-radius:12px;
+    padding:11px 14px;cursor:pointer;-webkit-appearance:none;appearance:none;
+  }
+  select.module{
+    min-width:120px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%2315803d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;
+  }
+  button{transition:border-color .15s,transform .05s;}
+  button:hover{border-color:var(--accent);}
+  button:active{transform:translateY(1px);}
+  button:focus-visible,select:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px;}
+  button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+  .spacer{flex:1;}
+
+  .layout{display:grid;grid-template-columns:1fr;gap:16px;}
+  @media(min-width:760px){.layout{grid-template-columns:1fr 260px;align-items:start;}}
+  .main{display:flex;flex-direction:column;gap:16px;}
+
+  .pitch-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;box-shadow:var(--shadow);}
+  .pitch{
+    position:relative;width:100%;aspect-ratio:66/100;border-radius:12px;overflow:hidden;
+    background:repeating-linear-gradient(0deg,var(--grass-1) 0 10%,var(--grass-2) 10% 20%);
+    border:2px solid var(--chalk);
+  }
+  .midline{position:absolute;left:0;right:0;top:50%;height:2px;background:var(--chalk);}
+  .circle{position:absolute;left:50%;top:50%;width:28%;aspect-ratio:1;transform:translate(-50%,-50%);border:2px solid var(--chalk);border-radius:50%;}
+  .spot{position:absolute;left:50%;top:50%;width:6px;height:6px;background:var(--chalk);border-radius:50%;transform:translate(-50%,-50%);}
+  .box{position:absolute;left:50%;transform:translateX(-50%);width:56%;height:14%;border:2px solid var(--chalk);}
+  .box.top{top:0;border-top:none;border-radius:0 0 6px 6px;}
+  .box.bottom{bottom:0;border-bottom:none;border-radius:6px 6px 0 0;}
+  .box6{position:absolute;left:50%;transform:translateX(-50%);width:28%;height:6%;border:2px solid var(--chalk-soft);}
+  .box6.top{top:0;border-top:none;}
+  .box6.bottom{bottom:0;border-bottom:none;}
+
+  .slot{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;width:clamp(58px,17vw,110px);}
+  .jersey{
+    width:clamp(32px,8.4vw,46px);height:clamp(32px,8.4vw,46px);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:"Barlow Condensed",sans-serif;font-weight:700;
+    font-size:clamp(11px,3vw,15px);color:#fff;letter-spacing:.02em;
+    border:2px solid rgba(255,255,255,.9);box-shadow:0 3px 7px rgba(0,0,0,.35);
+    -webkit-user-select:none;user-select:none;
+  }
+  .jersey.role-P{background:var(--p);}
+  .jersey.role-D{background:var(--d);}
+  .jersey.role-C{background:var(--c);}
+  .jersey.role-A{background:var(--a);}
+  .jersey.role-B{background:var(--bench);}
+  .slot select{
+    width:100%;font-family:"Barlow",sans-serif;
+    font-size:clamp(10px,2.7vw,12.5px);font-weight:600;text-align:center;text-align-last:center;
+    color:#fff;background:rgba(12,20,16,.9);border:1px solid rgba(255,255,255,.4);
+    border-radius:8px;padding:4px 4px;cursor:pointer;-webkit-appearance:none;appearance:none;
+  }
+  .slot select option{color:#111;background:#fff;}
+
+  /* PANCHINA */
+  .bench-card h3{margin-top:0;}
+  .bench{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  @media(min-width:520px){.bench{grid-template-columns:repeat(6,1fr);}}
+  .bslot{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .bslot select{
+    width:100%;font-family:"Barlow",sans-serif;font-size:12.5px;font-weight:600;
+    text-align:center;text-align-last:center;color:var(--text);background:var(--panel-2);
+    border:1.5px solid var(--line);border-radius:9px;padding:6px 4px;-webkit-appearance:none;appearance:none;cursor:pointer;
+  }
+
+  .side{display:flex;flex-direction:column;gap:14px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:15px;box-shadow:var(--shadow);}
+  .card h3{
+    font-family:"Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.12em;
+    margin:0 0 10px;font-size:13px;color:var(--muted);font-weight:600;
+  }
+  .statrow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);}
+  .statrow:last-child{border-bottom:none;}
+  .statrow .name{font-weight:600;font-size:15px;}
+  .statrow .val{font-variant-numeric:tabular-nums;font-weight:600;color:var(--muted);font-size:15px;}
+  .statrow .val b{color:var(--text);}
+  .hint{font-size:13.5px;color:var(--muted);line-height:1.55;margin:0;}
+
+  .overlay{position:fixed;inset:0;background:rgba(5,10,8,.82);display:none;align-items:center;justify-content:center;padding:18px;z-index:50;}
+  .overlay.on{display:flex;}
+  .sheet{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;max-width:560px;width:100%;max-height:92vh;overflow:auto;box-shadow:var(--shadow);}
+  .sheet h3{font-family:"Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.1em;margin:0 0 4px;font-size:16px;}
+  .sheet p{font-size:13.5px;color:var(--muted);margin:0 0 12px;line-height:1.5;}
+  .sheet img{display:block;width:100%;border-radius:10px;border:1px solid var(--line);}
+  .sheet .row{display:flex;gap:10px;justify-content:flex-end;margin-top:12px;}
+
+  .foot{margin-top:20px;text-align:center;color:var(--muted);font-size:12.5px;}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">⚽ Stagione 26/27</div>
+    <h1>Cesano Maderno</h1>
+  </header>
+
+  <div class="toolbar">
+    <div class="field">
+      <label for="module">Modulo</label>
+      <select id="module" class="module">
+        <option value="4-4-2">4-4-2</option>
+        <option value="4-3-3">4-3-3</option>
+        <option value="4-3-1-2">4-3-1-2</option>
+        <option value="4-2-3-1">4-2-3-1</option>
+        <option value="3-5-2">3-5-2</option>
+        <option value="3-4-3">3-4-3</option>
+        <option value="3-4-1-2">3-4-1-2</option>
+      </select>
+    </div>
+    <div class="spacer"></div>
+    <button id="reset" type="button">Svuota</button>
+    <button id="export" class="primary" type="button">Salva immagine</button>
+  </div>
+
+  <div class="layout">
+    <div class="main">
+      <div class="pitch-card">
+        <div class="pitch" id="pitch">
+          <div class="box top"></div>
+          <div class="box6 top"></div>
+          <div class="box bottom"></div>
+          <div class="box6 bottom"></div>
+          <div class="midline"></div>
+          <div class="circle"></div>
+          <div class="spot"></div>
+        </div>
+      </div>
+
+      <div class="card bench-card">
+        <h3>Panchina</h3>
+        <div class="bench" id="bench"></div>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="card">
+        <h3>Riepilogo</h3>
+        <div id="counters"></div>
+      </div>
+      <div class="card">
+        <h3>Come funziona</h3>
+        <p class="hint">
+          Scegli il modulo, poi tocca una casella e seleziona il giocatore. In porta solo i
+          portieri; negli slot di movimento e in panchina puoi mettere qualsiasi giocatore, e un
+          nome gia scelto non e piu selezionabile altrove. La formazione resta salvata sul
+          dispositivo. Con "Salva immagine" ottieni la foto di campo e panchina: su iPhone tienila
+          premuta e scegli "Salva nelle Foto".
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">Rosa Cesano Maderno 26/27</div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <h3>Formazione pronta</h3>
+    <p>Su iPhone: tieni premuto sull'immagine e scegli <b>"Salva nelle Foto"</b>. Su computer: tasto destro e <b>"Salva immagine"</b>.</p>
+    <img id="exportImg" alt="Formazione Cesano Maderno">
+    <div class="row"><button id="closeOverlay" type="button">Chiudi</button></div>
+  </div>
+</div>
+
+<script>
+  const players = {
+    P: ["Englaro","Alberti","Bogdan"],
+    D: ["Maresca","Mazzone","Momo","Soria","D'angelis","Usati","Bonetto","Cittadino","Familiari","Rossetto"],
+    C: ["Tedone","Piemontese","Frigerio","Carella","Isella","Cenderelli","Leopardi","Canneti","Lobina","Govoni"],
+    A: ["Quinci","Ghioni","Intelligenza","Coppola","Sala","Tagliabue"]
+  };
+  const ALL = [...players.P, ...players.D, ...players.C, ...players.A];   // tutti
+  const OUTFIELD = [...players.D, ...players.C, ...players.A];            // tutti tranne portieri
+  const BENCH_SLOTS = 6;
+  const TOTAL = ALL.length;
+
+  const modules = {
+    "4-4-2":   [["P",90,1],["D",71,4],["C",46,4],["A",16,2]],
+    "4-3-3":   [["P",90,1],["D",71,4],["C",46,3],["A",16,3]],
+    "4-3-1-2": [["P",90,1],["D",73,4],["C",54,3],["C",34,1],["A",14,2]],
+    "4-2-3-1": [["P",90,1],["D",73,4],["C",57,2],["C",37,3],["A",14,1]],
+    "3-5-2":   [["P",90,1],["D",71,3],["C",46,5],["A",16,2]],
+    "3-4-3":   [["P",90,1],["D",71,3],["C",46,4],["A",16,3]],
+    "3-4-1-2": [["P",90,1],["D",73,3],["C",54,4],["C",34,1],["A",14,2]]
+  };
+
+  const pitch = document.getElementById("pitch");
+  const bench = document.getElementById("bench");
+  const moduleSelect = document.getElementById("module");
+  const counters = document.getElementById("counters");
+  const KEY = "cesano-maderno-2627-v2";
+
+  let store = load();
+  let currentModule = store.module && modules[store.module] ? store.module : "4-3-3";
+  moduleSelect.value = currentModule;
+
+  function load(){
+    try{ const raw=localStorage.getItem(KEY); if(raw) return JSON.parse(raw); }catch(e){}
+    return {module:"4-3-3", data:{}, bench:{}};
+  }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
+
+  function xPositions(n){
+    if(n===1) return [50];
+    const min=10,max=90,out=[];
+    for(let i=0;i<n;i++) out.push(min+(max-min)*i/(n-1));
+    return out;
+  }
+  function initials(name){ return name.replace(/[’']/g,"").slice(0,3).toUpperCase(); }
+  function poolFor(sel){
+    if(sel.dataset.zone==="bench") return ALL;
+    return sel.dataset.role==="P" ? players.P : OUTFIELD;
+  }
+  function allSelects(){ return document.querySelectorAll(".pl-select"); }
+
+  function buildField(key){
+    currentModule = key;
+    store.module = key;
+    pitch.querySelectorAll(".slot").forEach(s=>s.remove());
+    const saved = (store.data && store.data[key]) ? store.data[key] : {};
+    let idx=0;
+    modules[key].forEach(([role,top,count])=>{
+      xPositions(count).forEach(x=>{
+        const i = idx++;
+        const slot=document.createElement("div");
+        slot.className="slot";
+        slot.style.left=x+"%"; slot.style.top=top+"%";
+        const jersey=document.createElement("div");
+        jersey.className="jersey role-"+role;
+        const sel=document.createElement("select");
+        sel.className="pl-select"; sel.dataset.zone="field"; sel.dataset.role=role; sel.dataset.index=i;
+        const val0 = saved[i]||"";
+        sel.addEventListener("change",()=>{
+          jersey.textContent = sel.value ? initials(sel.value) : role;
+          onChange();
+        });
+        slot.appendChild(jersey); slot.appendChild(sel); pitch.appendChild(slot);
+        sel._empty=role; sel._preset=val0;
+        jersey.textContent = val0 ? initials(val0) : role;
+      });
+    });
+    refreshOptions();
+    updateCounters();
+    save();
+  }
+
+  function buildBench(){
+    bench.innerHTML="";
+    for(let i=0;i<BENCH_SLOTS;i++){
+      const b=document.createElement("div"); b.className="bslot";
+      const sel=document.createElement("select");
+      sel.className="pl-select"; sel.dataset.zone="bench"; sel.dataset.index=i;
+      sel._empty="Panch. "+(i+1); sel._preset=(store.bench&&store.bench[i])||"";
+      sel.addEventListener("change", onChange);
+      b.appendChild(sel);
+      bench.appendChild(b);
+    }
+    refreshOptions();
+  }
+
+  function onChange(){ persist(); refreshOptions(); updateCounters(); }
+
+  function persist(){
+    const field={}, bch={};
+    allSelects().forEach(sel=>{
+      if(!sel.value) return;
+      if(sel.dataset.zone==="bench") bch[sel.dataset.index]=sel.value;
+      else field[sel.dataset.index]=sel.value;
+    });
+    if(!store.data) store.data={};
+    store.data[currentModule]=field;
+    store.bench=bch;
+    save();
+  }
+
+  function refreshOptions(){
+    const used=new Set();
+    allSelects().forEach(sel=>{ const v=sel.value||sel._preset; if(v) used.add(v); });
+    // ricostruisce le opzioni tenendo il valore corrente
+    allSelects().forEach(sel=>{
+      const current = sel.value || sel._preset || "";
+      sel._preset="";
+      const pool = poolFor(sel);
+      sel.innerHTML="";
+      const empty=document.createElement("option");
+      empty.value=""; empty.textContent = sel._empty || "— scegli —";
+      sel.appendChild(empty);
+      pool.forEach(p=>{
+        const o=document.createElement("option");
+        o.value=p; o.textContent=p;
+        if(used.has(p) && p!==current){ o.disabled=true; o.textContent=p+" (schierato)"; }
+        sel.appendChild(o);
+      });
+      sel.value=current;
+    });
+  }
+
+  function updateCounters(){
+    let field=0, bch=0; const used=new Set();
+    allSelects().forEach(sel=>{
+      if(!sel.value) return; used.add(sel.value);
+      if(sel.dataset.zone==="bench") bch++; else field++;
+    });
+    const titolari = pitch.querySelectorAll(".pl-select").length;
+    counters.innerHTML=
+      row("Titolari", field, titolari)+
+      row("Panchina", bch, BENCH_SLOTS)+
+      row("Giocatori usati", used.size, TOTAL);
+    function row(name,a,b){
+      return '<div class="statrow"><span class="name">'+name+
+             '</span><span class="val"><b>'+a+'</b> / '+b+'</span></div>';
+    }
+  }
+
+  moduleSelect.addEventListener("change",()=>buildField(moduleSelect.value));
+  document.getElementById("reset").addEventListener("click",()=>{
+    if(store.data) delete store.data[currentModule];
+    buildField(currentModule);
+  });
+
+  const overlay=document.getElementById("overlay");
+  const exportImg=document.getElementById("exportImg");
+  document.getElementById("closeOverlay").addEventListener("click",()=>overlay.classList.remove("on"));
+  overlay.addEventListener("click",e=>{ if(e.target===overlay) overlay.classList.remove("on"); });
+  function loadHtml2Canvas(){
+    return new Promise((resolve,reject)=>{
+      if(window.html2canvas) return resolve(window.html2canvas);
+      const s=document.createElement("script");
+      s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+      s.onload=()=>resolve(window.html2canvas); s.onerror=()=>reject();
+      document.head.appendChild(s);
+    });
+  }
+  document.getElementById("export").addEventListener("click",()=>{
+    const target=document.querySelector(".main");
+    const bg=getComputedStyle(document.body).backgroundColor;
+    loadHtml2Canvas().then(h2c=>h2c(target,{backgroundColor:bg,scale:2})).then(canvas=>{
+      exportImg.src=canvas.toDataURL("image/png"); overlay.classList.add("on");
+    }).catch(()=>alert("Non riesco a generare l'immagine: serve una connessione a internet."));
+  });
+
+  buildBench();
+  buildField(currentModule);
+</script>
+
+</body>
+</html>

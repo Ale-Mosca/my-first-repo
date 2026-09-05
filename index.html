@@ -169,6 +169,43 @@
   .statrow .val b{color:var(--text);}
   .hint{font-size:13.5px;color:var(--muted);line-height:1.55;margin:0;}
 
+  /* CONVOCAZIONI */
+  .conv-card{margin-top:16px;}
+  .conv-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .conv-head h3{margin:0;}
+  .conv-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .conv-count{font-weight:600;color:var(--muted);font-size:14px;}
+  .conv-actions button{font-size:14px;padding:9px 13px;}
+  .conv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;}
+  .conv-block{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel);}
+  .conv-block-title{display:flex;align-items:center;gap:9px;font-family:"Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.1em;font-weight:600;font-size:13px;padding:10px 12px;background:var(--panel-2);border-bottom:1px solid var(--line);}
+  .conv-block-title .count{margin-left:auto;color:var(--muted);}
+  .cdot{width:12px;height:12px;border-radius:50%;flex:none;}
+  .cdot.P{background:var(--p);}.cdot.D{background:var(--d);}.cdot.C{background:var(--c);}.cdot.A{background:var(--a);}
+  .conv-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border-bottom:1px solid var(--line);cursor:pointer;font-weight:600;font-size:15px;}
+  .conv-row:last-child{border-bottom:none;}
+  .conv-row input{width:21px;height:21px;accent-color:var(--accent);cursor:pointer;flex:none;margin:0;}
+
+  /* DISTINTA CONVOCATI (immagine esportata, colori fissi) */
+  #convSheet{position:fixed;left:-10000px;top:0;width:720px;box-sizing:border-box;padding:30px;color:#fff;
+    font-family:"Barlow","Segoe UI",sans-serif;background:#0e5a2b;
+    background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.06) 0 40px,rgba(255,255,255,0) 40px 80px);}
+  #convSheet .cs-top{display:flex;align-items:center;gap:16px;margin-bottom:20px;}
+  #convSheet .cs-ball{font-size:44px;line-height:1;}
+  #convSheet .cs-team{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:40px;letter-spacing:.02em;line-height:.95;text-transform:uppercase;}
+  #convSheet .cs-sub{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:15px;letter-spacing:.14em;color:#bfe6cb;text-transform:uppercase;margin-top:5px;}
+  #convSheet .cs-date{margin-left:auto;font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:19px;background:rgba(0,0,0,.28);padding:8px 12px;border-radius:10px;}
+  #convSheet .cs-panel{display:grid;grid-template-columns:1fr 1fr;gap:16px;background:#ffffff;border-radius:14px;padding:16px;}
+  #convSheet .cs-block{background:#f4f7f2;border:1px solid #e2e8dd;border-radius:10px;overflow:hidden;}
+  #convSheet .cs-block-h{color:#fff;font-family:"Barlow Condensed",sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:17px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;}
+  #convSheet .cs-block-h span{background:rgba(255,255,255,.3);border-radius:20px;padding:1px 10px;font-size:14px;}
+  #convSheet .cs-list{list-style:none;margin:0;padding:8px 12px;}
+  #convSheet .cs-list li{display:flex;align-items:center;gap:9px;padding:5px 0;font-size:16px;font-weight:600;color:#15201a;border-bottom:1px solid #eef2ea;}
+  #convSheet .cs-list li:last-child{border-bottom:none;}
+  #convSheet .cs-list .num{width:21px;height:21px;border-radius:50%;background:#e7efe9;color:#33443a;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;}
+  #convSheet .cs-list .none{color:#9aa79e;font-style:italic;font-weight:500;}
+  #convSheet .cs-foot{margin-top:16px;text-align:right;font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:20px;letter-spacing:.04em;}
+
   .overlay{position:fixed;inset:0;background:rgba(5,10,8,.82);display:none;align-items:center;justify-content:center;padding:18px;z-index:50;}
   .overlay.on{display:flex;}
   .sheet{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;max-width:560px;width:100%;max-height:92vh;overflow:auto;box-shadow:var(--shadow);}
@@ -239,18 +276,33 @@
           portieri; negli slot di movimento e in panchina puoi mettere qualsiasi giocatore, e un
           nome gia scelto non e piu selezionabile altrove. La formazione resta salvata sul
           dispositivo. Con "Salva immagine" ottieni la foto di campo e panchina: su iPhone tienila
-          premuta e scegli "Salva nelle Foto".
+          premuta e scegli "Salva nelle Foto". Nella sezione "Convocazioni" spunti i giocatori e con
+          "Esporta convocati" generi la distinta divisa per ruolo, in ordine alfabetico.
         </p>
       </div>
     </div>
   </div>
 
+  <section class="card conv-card">
+    <div class="conv-head">
+      <h3>Convocazioni</h3>
+      <div class="conv-actions">
+        <span id="convCount" class="conv-count">0 convocati</span>
+        <button id="convClear" type="button">Deseleziona</button>
+        <button id="convExport" class="primary" type="button">Esporta convocati</button>
+      </div>
+    </div>
+    <div class="conv-grid" id="convGrid"></div>
+  </section>
+
   <div class="foot">Rosa Cesano Maderno 26/27</div>
 </div>
 
+<div id="convSheet" aria-hidden="true"></div>
+
 <div class="overlay" id="overlay">
   <div class="sheet">
-    <h3>Formazione pronta</h3>
+    <h3>Immagine pronta</h3>
     <p>Su iPhone: tieni premuto sull'immagine e scegli <b>"Salva nelle Foto"</b>. Su computer: tasto destro e <b>"Salva immagine"</b>.</p>
     <img id="exportImg" alt="Formazione Cesano Maderno">
     <div class="row"><button id="closeOverlay" type="button">Chiudi</button></div>
@@ -283,6 +335,9 @@
   const bench = document.getElementById("bench");
   const moduleSelect = document.getElementById("module");
   const counters = document.getElementById("counters");
+  const convGrid = document.getElementById("convGrid");
+  const convSheet = document.getElementById("convSheet");
+  const convCount = document.getElementById("convCount");
   const KEY = "cesano-maderno-2627-v2";
 
   let store = load();
@@ -290,8 +345,8 @@
   moduleSelect.value = currentModule;
 
   function load(){
-    try{ const raw=localStorage.getItem(KEY); if(raw) return JSON.parse(raw); }catch(e){}
-    return {module:"4-3-3", data:{}, bench:{}};
+    try{ const raw=localStorage.getItem(KEY); if(raw){ const s=JSON.parse(raw); if(!s.called) s.called={}; return s; } }catch(e){}
+    return {module:"4-3-3", data:{}, bench:{}, called:{}};
   }
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
 
@@ -413,6 +468,73 @@
     buildField(currentModule);
   });
 
+  // ---- CONVOCAZIONI ----
+  const ROLES = [["P","Portieri"],["D","Difensori"],["C","Centrocampisti"],["A","Attaccanti"]];
+  const roleColor = {P:"#e08a00",D:"#2563eb",C:"#15a34a",A:"#e11d48"};
+
+  function buildConv(){
+    if(!store.called) store.called={};
+    convGrid.innerHTML="";
+    ROLES.forEach(([r,label])=>{
+      const names=[...players[r]].sort((a,b)=>a.localeCompare(b,"it"));
+      const block=document.createElement("div"); block.className="conv-block";
+      const head=document.createElement("div"); head.className="conv-block-title";
+      head.innerHTML='<span class="cdot '+r+'"></span>'+label+'<span class="count" data-role="'+r+'"></span>';
+      block.appendChild(head);
+      names.forEach(n=>{
+        const row=document.createElement("label"); row.className="conv-row";
+        const span=document.createElement("span"); span.textContent=n;
+        const cb=document.createElement("input"); cb.type="checkbox"; cb.dataset.name=n; cb.dataset.role=r;
+        cb.checked=!!store.called[n];
+        cb.addEventListener("change",()=>{
+          if(cb.checked) store.called[n]=true; else delete store.called[n];
+          save(); updateConvCount();
+        });
+        row.appendChild(span); row.appendChild(cb); block.appendChild(row);
+      });
+      convGrid.appendChild(block);
+    });
+    updateConvCount();
+  }
+
+  function updateConvCount(){
+    let total=0; const perRole={P:0,D:0,C:0,A:0};
+    convGrid.querySelectorAll("input[type=checkbox]").forEach(cb=>{
+      if(cb.checked){ total++; perRole[cb.dataset.role]++; }
+    });
+    convCount.textContent = total+(total===1?" convocato":" convocati");
+    convGrid.querySelectorAll(".count").forEach(el=>{ el.textContent=perRole[el.dataset.role]; });
+  }
+
+  document.getElementById("convClear").addEventListener("click",()=>{
+    store.called={}; save();
+    convGrid.querySelectorAll("input[type=checkbox]").forEach(cb=>cb.checked=false);
+    updateConvCount();
+  });
+
+  function buildConvSheet(){
+    let total=0, blocks="";
+    ROLES.forEach(([r,label])=>{
+      const list=players[r].filter(n=>store.called&&store.called[n]).sort((a,b)=>a.localeCompare(b,"it"));
+      total+=list.length;
+      const items=list.length
+        ? list.map((n,i)=>'<li><span class="num">'+(i+1)+'</span>'+n+'</li>').join("")
+        : '<li class="none">nessun convocato</li>';
+      blocks+='<div class="cs-block"><div class="cs-block-h" style="background:'+roleColor[r]+'">'+
+              label+'<span>'+list.length+'</span></div><ol class="cs-list">'+items+'</ol></div>';
+    });
+    const d=new Date();
+    const dd=String(d.getDate()).padStart(2,"0"), mm=String(d.getMonth()+1).padStart(2,"0"), yy=d.getFullYear();
+    convSheet.innerHTML=
+      '<div class="cs-top"><div class="cs-ball">⚽</div><div>'+
+      '<div class="cs-team">Cesano Maderno</div>'+
+      '<div class="cs-sub">Distinta convocati · Stagione 26/27</div></div>'+
+      '<div class="cs-date">'+dd+'/'+mm+'/'+yy+'</div></div>'+
+      '<div class="cs-panel">'+blocks+'</div>'+
+      '<div class="cs-foot">Totale convocati: <b>'+total+'</b></div>';
+    return total;
+  }
+
   const overlay=document.getElementById("overlay");
   const exportImg=document.getElementById("exportImg");
   document.getElementById("closeOverlay").addEventListener("click",()=>overlay.classList.remove("on"));
@@ -434,8 +556,16 @@
     }).catch(()=>alert("Non riesco a generare l'immagine: serve una connessione a internet."));
   });
 
+  document.getElementById("convExport").addEventListener("click",()=>{
+    buildConvSheet();
+    loadHtml2Canvas().then(h2c=>h2c(convSheet,{backgroundColor:"#0e5a2b",scale:2})).then(canvas=>{
+      exportImg.src=canvas.toDataURL("image/png"); overlay.classList.add("on");
+    }).catch(()=>alert("Non riesco a generare l'immagine: serve una connessione a internet."));
+  });
+
   buildBench();
   buildField(currentModule);
+  buildConv();
 </script>
 
 </body>

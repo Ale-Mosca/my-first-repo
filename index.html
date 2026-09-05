@@ -288,6 +288,7 @@
       <h3>Convocazioni</h3>
       <div class="conv-actions">
         <span id="convCount" class="conv-count">0 convocati</span>
+        <button id="convFromLineup" type="button">Convoca la formazione</button>
         <button id="convClear" type="button">Deseleziona</button>
         <button id="convExport" class="primary" type="button">Esporta convocati</button>
       </div>
@@ -505,6 +506,15 @@
     convCount.textContent = total+(total===1?" convocato":" convocati");
     convGrid.querySelectorAll(".count").forEach(el=>{ el.textContent=perRole[el.dataset.role]; });
   }
+
+  document.getElementById("convFromLineup").addEventListener("click",()=>{
+    // aggiunge ai convocati tutti i giocatori schierati (campo + panchina),
+    // senza distinguere titolari da panchina
+    allSelects().forEach(sel=>{ if(sel.value) store.called[sel.value]=true; });
+    save();
+    convGrid.querySelectorAll("input[type=checkbox]").forEach(cb=>{ cb.checked=!!store.called[cb.dataset.name]; });
+    updateConvCount();
+  });
 
   document.getElementById("convClear").addEventListener("click",()=>{
     store.called={}; save();

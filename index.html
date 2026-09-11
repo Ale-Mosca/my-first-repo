@@ -123,12 +123,11 @@
   .box6.top{top:0;border-top:none;}
   .box6.bottom{bottom:0;border-bottom:none;}
 
-  /* fasce di ruolo */
-  .zone{position:absolute;left:0;right:0;z-index:1;display:flex;align-items:center;pointer-events:none;transition:background .12s;}
+  /* fasce di ruolo (invisibili, evidenziate solo durante il trascinamento) */
+  .zone{position:absolute;left:0;right:0;z-index:1;pointer-events:none;transition:background .12s;}
   .z-att{top:4%;height:34%;}
-  .z-cen{top:38%;height:28%;border-top:2px dashed var(--chalk-soft);border-bottom:2px dashed var(--chalk-soft);}
+  .z-cen{top:38%;height:28%;}
   .z-dif{top:66%;height:30%;}
-  .zone>span{font-family:"Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.16em;font-size:10.5px;font-weight:600;color:rgba(255,255,255,.72);background:rgba(0,0,0,.22);padding:2px 8px;border-radius:0 8px 8px 0;}
   .zone.active{background:rgba(255,255,255,.12);}
 
   .slot{position:absolute;z-index:2;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;width:clamp(58px,17vw,110px);}
@@ -250,6 +249,7 @@
       </select>
     </div>
     <div class="spacer"></div>
+    <button id="resetPos" type="button">Reset posizioni</button>
     <button id="reset" type="button">Svuota</button>
     <button id="export" class="primary" type="button">Salva immagine</button>
   </div>
@@ -258,9 +258,9 @@
     <div class="main">
       <div class="pitch-card">
         <div class="pitch" id="pitch">
-          <div class="zone z-att"><span>Attacco</span></div>
-          <div class="zone z-cen"><span>Centrocampo</span></div>
-          <div class="zone z-dif"><span>Difesa</span></div>
+          <div class="zone z-att"></div>
+          <div class="zone z-cen"></div>
+          <div class="zone z-dif"></div>
           <div class="box top"></div>
           <div class="box6 top"></div>
           <div class="box bottom"></div>
@@ -383,6 +383,15 @@
   const zoneSel={A:".z-att",C:".z-cen",D:".z-dif"};
   function roleFromTop(y){ return y<BAND_ATT ? "A" : (y<BAND_CEN ? "C" : "D"); }
 
+  // ritorna le linee di un modulo noto, oppure le genera da una stringa "D-C-A"
+  function linesFor(key){
+    if(modules[key]) return modules[key];
+    const p=String(key).split("-").map(Number);
+    if(p.length===3 && p.every(n=>Number.isFinite(n)&&n>=0))
+      return [["P",90,1],["D",71,p[0]],["C",46,p[1]],["A",16,p[2]]];
+    return modules["4-3-3"];
+  }
+
   function buildField(key){
     currentModule = key;
     store.module = key;
@@ -390,7 +399,7 @@
     const saved = (store.data && store.data[key]) ? store.data[key] : {};
     const savedPos = (store.pos && store.pos[key]) ? store.pos[key] : {};
     let idx=0;
-    modules[key].forEach(([role,top,count])=>{
+    linesFor(key).forEach(([role,top,count])=>{
       xPositions(count).forEach(x=>{
         const i = idx++;
         const isGK = (role==="P");
@@ -456,6 +465,29 @@
     jersey.className="jersey role-"+role+" draggable";
     jersey.textContent = sel.value ? initials(sel.value) : role;
     updateCounters();
+    syncModuleDropdown();
+  }
+
+  // aggiorna il modulo mostrato in alto in base ai ruoli attuali in campo
+  let customOpt=null;
+  function currentFormationString(){
+    const f={D:0,C:0,A:0};
+    pitch.querySelectorAll(".slot .pl-select").forEach(s=>{
+      if(f[s.dataset.role]!=null) f[s.dataset.role]++;
+    });
+    return f.D+"-"+f.C+"-"+f.A;
+  }
+  function syncModuleDropdown(){
+    const fstr=currentFormationString();
+    const std=[...moduleSelect.options].find(o=>o.value===fstr && o!==customOpt);
+    if(std){
+      if(customOpt){ customOpt.remove(); customOpt=null; }
+      moduleSelect.value=fstr;
+    }else{
+      if(!customOpt){ customOpt=document.createElement("option"); moduleSelect.appendChild(customOpt); }
+      customOpt.value=fstr; customOpt.textContent=fstr+" (pers.)";
+      moduleSelect.value=fstr;
+    }
   }
   function highlightZone(y){
     clearZones();
@@ -545,11 +577,25 @@
     }
   }
 
-  moduleSelect.addEventListener("change",()=>buildField(moduleSelect.value));
+  moduleSelect.addEventListener("change",()=>{
+    const v=moduleSelect.value;
+    if(customOpt && v!==customOpt.value){ customOpt.remove(); customOpt=null; }
+    buildField(v);
+  });
+  // Svuota: toglie nomi e posizioni, torna al modulo scelto
   document.getElementById("reset").addEventListener("click",()=>{
     if(store.data) delete store.data[currentModule];
     if(store.pos) delete store.pos[currentModule];
     buildField(currentModule);
+  });
+  // Reset posizioni: riporta le pedine alla disposizione del modulo, mantiene i nomi
+  document.getElementById("resetPos").addEventListener("click",()=>{
+    if(store.pos) delete store.pos[currentModule];
+    buildField(currentModule);
+    if(modules[currentModule]){
+      if(customOpt){ customOpt.remove(); customOpt=null; }
+      moduleSelect.value=currentModule;
+    }
   });
 
   // ---- CONVOCAZIONI ----
@@ -658,6 +704,7 @@
 
   buildBench();
   buildField(currentModule);
+  if(store.pos && store.pos[currentModule]) syncModuleDropdown();
   buildConv();
 </script>
 

@@ -123,15 +123,25 @@
   .box6.top{top:0;border-top:none;}
   .box6.bottom{bottom:0;border-bottom:none;}
 
-  .slot{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;width:clamp(58px,17vw,110px);}
+  /* fasce di ruolo */
+  .zone{position:absolute;left:0;right:0;z-index:1;display:flex;align-items:center;pointer-events:none;transition:background .12s;}
+  .z-att{top:4%;height:34%;}
+  .z-cen{top:38%;height:28%;border-top:2px dashed var(--chalk-soft);border-bottom:2px dashed var(--chalk-soft);}
+  .z-dif{top:66%;height:30%;}
+  .zone>span{font-family:"Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.16em;font-size:10.5px;font-weight:600;color:rgba(255,255,255,.72);background:rgba(0,0,0,.22);padding:2px 8px;border-radius:0 8px 8px 0;}
+  .zone.active{background:rgba(255,255,255,.12);}
+
+  .slot{position:absolute;z-index:2;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;width:clamp(58px,17vw,110px);}
   .jersey{
     width:clamp(32px,8.4vw,46px);height:clamp(32px,8.4vw,46px);border-radius:50%;
     display:flex;align-items:center;justify-content:center;
     font-family:"Barlow Condensed",sans-serif;font-weight:700;
     font-size:clamp(11px,3vw,15px);color:#fff;letter-spacing:.02em;
     border:2px solid rgba(255,255,255,.9);box-shadow:0 3px 7px rgba(0,0,0,.35);
-    -webkit-user-select:none;user-select:none;
+    -webkit-user-select:none;user-select:none;transition:transform .08s;
   }
+  .jersey.draggable{cursor:grab;touch-action:none;}
+  .jersey.grabbing{cursor:grabbing;transform:scale(1.18);box-shadow:0 6px 14px rgba(0,0,0,.5);z-index:5;}
   .jersey.role-P{background:var(--p);}
   .jersey.role-D{background:var(--d);}
   .jersey.role-C{background:var(--c);}
@@ -248,6 +258,9 @@
     <div class="main">
       <div class="pitch-card">
         <div class="pitch" id="pitch">
+          <div class="zone z-att"><span>Attacco</span></div>
+          <div class="zone z-cen"><span>Centrocampo</span></div>
+          <div class="zone z-dif"><span>Difesa</span></div>
           <div class="box top"></div>
           <div class="box6 top"></div>
           <div class="box bottom"></div>
@@ -272,9 +285,11 @@
       <div class="card">
         <h3>Come funziona</h3>
         <p class="hint">
-          Scegli il modulo, poi tocca una casella e seleziona il giocatore. In porta solo i
-          portieri; negli slot di movimento e in panchina puoi mettere qualsiasi giocatore, e un
-          nome gia scelto non e piu selezionabile altrove. La formazione resta salvata sul
+          Scegli il modulo come punto di partenza, poi tocca il menu per assegnare il giocatore.
+          Trascina col dito le pedine sul campo: la fascia in cui le lasci (Difesa, Centrocampo,
+          Attacco) ne cambia il ruolo e il colore. Il portiere resta fisso in porta. In porta solo
+          i portieri; altrove qualsiasi giocatore, e un nome gia scelto non e piu selezionabile
+          altrove. La formazione resta salvata sul
           dispositivo. Con "Salva immagine" ottieni la foto di campo e panchina: su iPhone tienila
           premuta e scegli "Salva nelle Foto". Nella sezione "Convocazioni" spunti i giocatori e con
           "Esporta convocati" generi la distinta divisa per ruolo, in ordine alfabetico.
@@ -325,11 +340,11 @@
   const modules = {
     "4-4-2":   [["P",90,1],["D",71,4],["C",46,4],["A",16,2]],
     "4-3-3":   [["P",90,1],["D",71,4],["C",46,3],["A",16,3]],
-    "4-3-1-2": [["P",90,1],["D",73,4],["C",54,3],["C",34,1],["A",14,2]],
-    "4-2-3-1": [["P",90,1],["D",73,4],["C",57,2],["C",37,3],["A",14,1]],
+    "4-3-1-2": [["P",90,1],["D",73,4],["C",56,3],["C",42,1],["A",16,2]],
+    "4-2-3-1": [["P",90,1],["D",73,4],["C",58,2],["C",43,3],["A",16,1]],
     "3-5-2":   [["P",90,1],["D",71,3],["C",46,5],["A",16,2]],
     "3-4-3":   [["P",90,1],["D",71,3],["C",46,4],["A",16,3]],
-    "3-4-1-2": [["P",90,1],["D",73,3],["C",54,4],["C",34,1],["A",14,2]]
+    "3-4-1-2": [["P",90,1],["D",73,3],["C",56,4],["C",42,1],["A",16,2]]
   };
 
   const pitch = document.getElementById("pitch");
@@ -346,8 +361,8 @@
   moduleSelect.value = currentModule;
 
   function load(){
-    try{ const raw=localStorage.getItem(KEY); if(raw){ const s=JSON.parse(raw); if(!s.called) s.called={}; return s; } }catch(e){}
-    return {module:"4-3-3", data:{}, bench:{}, called:{}};
+    try{ const raw=localStorage.getItem(KEY); if(raw){ const s=JSON.parse(raw); if(!s.called) s.called={}; if(!s.pos) s.pos={}; return s; } }catch(e){}
+    return {module:"4-3-3", data:{}, bench:{}, called:{}, pos:{}};
   }
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
 
@@ -364,34 +379,98 @@
   }
   function allSelects(){ return document.querySelectorAll(".pl-select"); }
 
+  const BAND_ATT=38, BAND_CEN=66;   // confini in top% tra le fasce
+  const zoneSel={A:".z-att",C:".z-cen",D:".z-dif"};
+  function roleFromTop(y){ return y<BAND_ATT ? "A" : (y<BAND_CEN ? "C" : "D"); }
+
   function buildField(key){
     currentModule = key;
     store.module = key;
     pitch.querySelectorAll(".slot").forEach(s=>s.remove());
     const saved = (store.data && store.data[key]) ? store.data[key] : {};
+    const savedPos = (store.pos && store.pos[key]) ? store.pos[key] : {};
     let idx=0;
     modules[key].forEach(([role,top,count])=>{
       xPositions(count).forEach(x=>{
         const i = idx++;
+        const isGK = (role==="P");
+        const p = savedPos[i] || {};
+        const px = (p.x!=null) ? p.x : x;
+        const py = (p.y!=null) ? p.y : top;
+        const prole = isGK ? "P" : (p.role || role);   // il portiere resta sempre P
+
         const slot=document.createElement("div");
         slot.className="slot";
-        slot.style.left=x+"%"; slot.style.top=top+"%";
+        slot.style.left=px+"%"; slot.style.top=py+"%";
         const jersey=document.createElement("div");
-        jersey.className="jersey role-"+role;
+        jersey.className="jersey role-"+prole+(isGK?"":" draggable");
         const sel=document.createElement("select");
-        sel.className="pl-select"; sel.dataset.zone="field"; sel.dataset.role=role; sel.dataset.index=i;
+        sel.className="pl-select"; sel.dataset.zone="field"; sel.dataset.role=prole; sel.dataset.index=i;
         const val0 = saved[i]||"";
         sel.addEventListener("change",()=>{
-          jersey.textContent = sel.value ? initials(sel.value) : role;
+          jersey.textContent = sel.value ? initials(sel.value) : sel.dataset.role;
           onChange();
         });
         slot.appendChild(jersey); slot.appendChild(sel); pitch.appendChild(slot);
         sel._empty=role; sel._preset=val0;
-        jersey.textContent = val0 ? initials(val0) : role;
+        jersey.textContent = val0 ? initials(val0) : prole;
+        if(!isGK) attachDrag(slot, jersey, sel);
       });
     });
     refreshOptions();
     updateCounters();
+    save();
+  }
+
+  // ---- TRASCINAMENTO PEDINE ----
+  function attachDrag(slot, jersey, sel){
+    let dragging=false;
+    jersey.addEventListener("pointerdown", e=>{
+      dragging=true;
+      try{ jersey.setPointerCapture(e.pointerId); }catch(_){}
+      jersey.classList.add("grabbing"); e.preventDefault();
+    });
+    jersey.addEventListener("pointermove", e=>{
+      if(!dragging) return;
+      const r=pitch.getBoundingClientRect();
+      let x=(e.clientX-r.left)/r.width*100;
+      let y=(e.clientY-r.top)/r.height*100;
+      x=Math.max(6,Math.min(94,x));
+      y=Math.max(8,Math.min(86,y));   // resta sopra la porta del portiere
+      slot.style.left=x+"%"; slot.style.top=y+"%";
+      highlightZone(y);
+    });
+    const end=()=>{
+      if(!dragging) return; dragging=false;
+      jersey.classList.remove("grabbing");
+      clearZones();
+      const role=roleFromTop(parseFloat(slot.style.top));
+      setRole(jersey, sel, role);
+      persistPos();
+    };
+    jersey.addEventListener("pointerup", end);
+    jersey.addEventListener("pointercancel", end);
+  }
+  function setRole(jersey, sel, role){
+    sel.dataset.role=role;
+    jersey.className="jersey role-"+role+" draggable";
+    jersey.textContent = sel.value ? initials(sel.value) : role;
+    updateCounters();
+  }
+  function highlightZone(y){
+    clearZones();
+    const el=pitch.querySelector(zoneSel[roleFromTop(y)]);
+    if(el) el.classList.add("active");
+  }
+  function clearZones(){ pitch.querySelectorAll(".zone").forEach(z=>z.classList.remove("active")); }
+  function persistPos(){
+    if(!store.pos) store.pos={};
+    const m={};
+    pitch.querySelectorAll(".slot").forEach(slot=>{
+      const s=slot.querySelector(".pl-select");
+      m[s.dataset.index]={x:parseFloat(slot.style.left), y:parseFloat(slot.style.top), role:s.dataset.role};
+    });
+    store.pos[currentModule]=m;
     save();
   }
 
@@ -447,25 +526,29 @@
   }
 
   function updateCounters(){
-    let field=0, bch=0; const used=new Set();
+    let fieldTot=0, bch=0; const f={P:0,D:0,C:0,A:0};
     allSelects().forEach(sel=>{
-      if(!sel.value) return; used.add(sel.value);
-      if(sel.dataset.zone==="bench") bch++; else field++;
+      if(!sel.value) return;
+      if(sel.dataset.zone==="bench"){ bch++; }
+      else { fieldTot++; f[sel.dataset.role]=(f[sel.dataset.role]||0)+1; }
     });
     const titolari = pitch.querySelectorAll(".pl-select").length;
     counters.innerHTML=
-      row("Titolari", field, titolari)+
-      row("Panchina", bch, BENCH_SLOTS)+
-      row("Giocatori usati", used.size, TOTAL);
+      row("Titolari", fieldTot, titolari)+
+      row("Difensori", f.D, null)+
+      row("Centrocampisti", f.C, null)+
+      row("Attaccanti", f.A, null)+
+      row("Panchina", bch, BENCH_SLOTS);
     function row(name,a,b){
-      return '<div class="statrow"><span class="name">'+name+
-             '</span><span class="val"><b>'+a+'</b> / '+b+'</span></div>';
+      const val = (b==null) ? '<b>'+a+'</b>' : '<b>'+a+'</b> / '+b;
+      return '<div class="statrow"><span class="name">'+name+'</span><span class="val">'+val+'</span></div>';
     }
   }
 
   moduleSelect.addEventListener("change",()=>buildField(moduleSelect.value));
   document.getElementById("reset").addEventListener("click",()=>{
     if(store.data) delete store.data[currentModule];
+    if(store.pos) delete store.pos[currentModule];
     buildField(currentModule);
   });
 

@@ -125,9 +125,9 @@
 
   /* fasce di ruolo (invisibili, evidenziate solo durante il trascinamento) */
   .zone{position:absolute;left:0;right:0;z-index:1;pointer-events:none;transition:background .12s;}
-  .z-att{top:4%;height:34%;}
-  .z-cen{top:38%;height:28%;}
-  .z-dif{top:66%;height:30%;}
+  .z-att{top:0;height:30%;}
+  .z-cen{top:30%;height:40%;}
+  .z-dif{top:70%;height:30%;}
   .zone.active{background:rgba(255,255,255,.12);}
 
   .slot{position:absolute;z-index:2;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;width:clamp(58px,17vw,110px);}
@@ -338,13 +338,13 @@
   const TOTAL = ALL.length;
 
   const modules = {
-    "4-4-2":   [["P",90,1],["D",71,4],["C",46,4],["A",16,2]],
-    "4-3-3":   [["P",90,1],["D",71,4],["C",46,3],["A",16,3]],
-    "4-3-1-2": [["P",90,1],["D",73,4],["C",56,3],["C",42,1],["A",16,2]],
-    "4-2-3-1": [["P",90,1],["D",73,4],["C",58,2],["C",43,3],["A",16,1]],
-    "3-5-2":   [["P",90,1],["D",71,3],["C",46,5],["A",16,2]],
-    "3-4-3":   [["P",90,1],["D",71,3],["C",46,4],["A",16,3]],
-    "3-4-1-2": [["P",90,1],["D",73,3],["C",56,4],["C",42,1],["A",16,2]]
+    "4-4-2":   [["P",90,1],["D",78,4],["C",50,4],["A",16,2]],
+    "4-3-3":   [["P",90,1],["D",78,4],["C",50,3],["A",16,3]],
+    "4-3-1-2": [["P",90,1],["D",80,4],["C",56,3],["C",40,1],["A",16,2]],
+    "4-2-3-1": [["P",90,1],["D",80,4],["C",60,2],["C",42,3],["A",16,1]],
+    "3-5-2":   [["P",90,1],["D",78,3],["C",50,5],["A",16,2]],
+    "3-4-3":   [["P",90,1],["D",78,3],["C",50,4],["A",16,3]],
+    "3-4-1-2": [["P",90,1],["D",80,3],["C",56,4],["C",40,1],["A",16,2]]
   };
 
   const pitch = document.getElementById("pitch");
@@ -379,7 +379,7 @@
   }
   function allSelects(){ return document.querySelectorAll(".pl-select"); }
 
-  const BAND_ATT=38, BAND_CEN=66;   // confini in top% tra le fasce
+  const BAND_ATT=30, BAND_CEN=70;   // confini in top%: 0-30 att, 30-70 cen, 70-100 dif
   const zoneSel={A:".z-att",C:".z-cen",D:".z-dif"};
   function roleFromTop(y){ return y<BAND_ATT ? "A" : (y<BAND_CEN ? "C" : "D"); }
 
@@ -388,7 +388,7 @@
     if(modules[key]) return modules[key];
     const p=String(key).split("-").map(Number);
     if(p.length===3 && p.every(n=>Number.isFinite(n)&&n>=0))
-      return [["P",90,1],["D",71,p[0]],["C",46,p[1]],["A",16,p[2]]];
+      return [["P",90,1],["D",78,p[0]],["C",50,p[1]],["A",16,p[2]]];
     return modules["4-3-3"];
   }
 
@@ -445,7 +445,7 @@
       let x=(e.clientX-r.left)/r.width*100;
       let y=(e.clientY-r.top)/r.height*100;
       x=Math.max(6,Math.min(94,x));
-      y=Math.max(8,Math.min(86,y));   // resta sopra la porta del portiere
+      y=Math.max(5,Math.min(86,y));   // fino al limite alto del campo, sopra la porta del portiere
       slot.style.left=x+"%"; slot.style.top=y+"%";
       highlightZone(y);
     });

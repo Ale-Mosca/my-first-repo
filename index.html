@@ -253,6 +253,8 @@
   .cjersey.role-C{background:var(--c);}
   .cjersey.role-A{background:var(--a);}
   .cjersey.kicker{box-shadow:0 0 0 3px #f5c518,0 3px 7px rgba(0,0,0,.4);}
+  .cjersey.opp{background:#1f2937;border-color:rgba(255,255,255,.85);}
+  .cdot.OPP{background:#1f2937;}
   .cjersey.grabbing{cursor:grabbing;transform:scale(1.16);z-index:5;box-shadow:0 6px 14px rgba(0,0,0,.5);}
   .segmented{display:flex;gap:5px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:4px;}
   .segbtn{font-family:"Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.06em;font-size:13px;font-weight:600;padding:9px 13px;border:none;border-radius:9px;background:transparent;color:var(--muted);cursor:pointer;}
@@ -300,6 +302,7 @@
     <nav class="viewnav">
       <button id="tabFormazione" class="tabbtn active" type="button">Formazione</button>
       <button id="tabCorner" class="tabbtn" type="button">Calci piazzati</button>
+      <button id="tabTactic" class="tabbtn" type="button">Tattica</button>
     </nav>
   </header>
 
@@ -419,6 +422,44 @@
       </p>
     </div>
   </div><!-- /viewCorner -->
+
+  <div id="viewTactic" hidden>
+    <div class="eyebrow" style="margin-bottom:10px">Lavagna tattica</div>
+    <div class="toolbar">
+      <div class="spacer"></div>
+      <button id="tacticSync" type="button">Riprendi formazione</button>
+      <button id="tacticReset" type="button">Reset board</button>
+      <button id="tacticExport" class="primary" type="button">Salva immagine</button>
+    </div>
+    <div class="pitch-card">
+      <div class="pitch" id="tacticpitch">
+        <div class="box top"></div>
+        <div class="box6 top"></div>
+        <div class="box bottom"></div>
+        <div class="box6 bottom"></div>
+        <div class="midline"></div>
+        <div class="circle"></div>
+        <div class="spot"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Come funziona</h3>
+      <div class="legend">
+        <span><span class="cdot P"></span>Portiere</span>
+        <span><span class="cdot D"></span>Difensore</span>
+        <span><span class="cdot C"></span>Centrocampista</span>
+        <span><span class="cdot A"></span>Attaccante</span>
+        <span><span class="cdot OPP"></span>Avversari</span>
+      </div>
+      <p class="hint">
+        Campo intero per la tattica. In basso i nostri 11 titolari (cerchietti colorati per ruolo
+        con sigla ed etichetta: toccali per assegnare il giocatore), in alto gli 11 avversari
+        (cerchietti scuri numerati). Trascina col dito qualsiasi pedina e la palla dove vuoi.
+        "Riprendi formazione" riallinea i nostri nomi ai titolari, "Reset board" torna alla
+        disposizione iniziale. Tutto resta salvato sul dispositivo.
+      </p>
+    </div>
+  </div><!-- /viewTactic -->
 
   <div class="foot">Rosa Cesano Maderno 26/27</div>
 </div>
@@ -842,8 +883,8 @@
     return "cjersey"+(r?(" role-"+r):"");
   }
   function cInitials(name){ return name.replace(/[’']/g,"").slice(0,2).toUpperCase(); }
-  // trascinamento con distinzione tap (movimento minimo) vs drag
-  function attachDragGeneric(handle, target, onEnd, onTap){
+  // trascinamento (container = campo di riferimento) con distinzione tap vs drag
+  function attachDragGeneric(handle, target, container, onEnd, onTap){
     let dragging=false, moved=false, sx=0, sy=0;
     handle.addEventListener("pointerdown",e=>{
       dragging=true; moved=false; sx=e.clientX; sy=e.clientY;
@@ -853,7 +894,7 @@
     handle.addEventListener("pointermove",e=>{
       if(!dragging) return;
       if(Math.abs(e.clientX-sx)>5 || Math.abs(e.clientY-sy)>5) moved=true;
-      const r=halfpitch.getBoundingClientRect();
+      const r=container.getBoundingClientRect();
       let x=(e.clientX-r.left)/r.width*100, y=(e.clientY-r.top)/r.height*100;
       x=Math.max(3,Math.min(97,x)); y=Math.max(3,Math.min(97,y));
       target.style.left=x+"%"; target.style.top=y+"%";
@@ -865,42 +906,55 @@
     handle.addEventListener("pointerup",end);
     handle.addEventListener("pointercancel",end);
   }
-  // pedina compatta: solo cerchietto con sigla; tap apre il selettore
-  function makeCToken(rec){
+  // pedina nostra: cerchietto colorato per ruolo con sigla + etichetta; tap apre il selettore
+  function makePlayerToken(container, rec, usedGetter){
     const t=document.createElement("div"); t.className="ctoken";
     t.style.left=rec.x+"%"; t.style.top=rec.y+"%";
     const j=document.createElement("div"); j.className=cjerseyClass(rec.name);
     j.textContent = rec.name ? cInitials(rec.name) : "+";
     const lab=document.createElement("div"); lab.className="clabel";
     lab.textContent=rec.name||""; lab.hidden=!rec.name;
-    attachDragGeneric(j, t,
+    attachDragGeneric(j, t, container,
       ()=>{ rec.x=parseFloat(t.style.left); rec.y=parseFloat(t.style.top); save(); },
-      ()=>openPicker(rec, j, lab)
+      ()=>openPicker(rec, j, lab, usedGetter)
     );
-    t.appendChild(j); t.appendChild(lab); halfpitch.appendChild(t);
+    t.appendChild(j); t.appendChild(lab); container.appendChild(t);
+  }
+  // pedina avversaria: cerchietto scuro numerato, solo trascinabile
+  function makeOppToken(container, rec, num){
+    const t=document.createElement("div"); t.className="ctoken";
+    t.style.left=rec.x+"%"; t.style.top=rec.y+"%";
+    const j=document.createElement("div"); j.className="cjersey opp"; j.textContent=num;
+    attachDragGeneric(j, t, container,
+      ()=>{ rec.x=parseFloat(t.style.left); rec.y=parseFloat(t.style.top); save(); }
+    );
+    t.appendChild(j); container.appendChild(t);
+  }
+  function makeBall(container, ballRec){
+    const b=document.createElement("div"); b.className="cball"; b.textContent="⚽";
+    b.style.left=ballRec.x+"%"; b.style.top=ballRec.y+"%";
+    attachDragGeneric(b, b, container, ()=>{
+      ballRec.x=parseFloat(b.style.left); ballRec.y=parseFloat(b.style.top); save();
+    });
+    container.appendChild(b);
   }
   function buildCorner(){
     if(!store.corner) store.corner=defaultCorner();
     halfpitch.querySelectorAll(".ctoken,.cball").forEach(e=>e.remove());
+    const usedGetter=()=>new Set(Object.values(store.corner.p).map(o=>o.name).filter(Boolean));
     for(let i=0;i<11;i++){
       if(!store.corner.p[i]) store.corner.p[i]={x:CORNER_POS[i].x,y:CORNER_POS[i].y,name:""};
-      makeCToken(store.corner.p[i]);
+      makePlayerToken(halfpitch, store.corner.p[i], usedGetter);
     }
-    const b=document.createElement("div"); b.className="cball"; b.textContent="⚽";
-    b.style.left=store.corner.ball.x+"%"; b.style.top=store.corner.ball.y+"%";
-    attachDragGeneric(b, b, ()=>{
-      store.corner.ball.x=parseFloat(b.style.left);
-      store.corner.ball.y=parseFloat(b.style.top); save();
-    });
-    halfpitch.appendChild(b);
+    makeBall(halfpitch, store.corner.ball);
   }
 
   // ---- SELETTORE GIOCATORE (tap sulla pedina) ----
   const cpicker=document.getElementById("cpicker");
   const pickerList=document.getElementById("pickerList");
   const ROLE_LABEL={P:"Portieri",D:"Difensori",C:"Centrocampisti",A:"Attaccanti"};
-  function openPicker(rec, jersey, label){
-    const used=new Set(Object.values(store.corner.p).map(o=>o.name).filter(Boolean));
+  function openPicker(rec, jersey, label, usedGetter){
+    const used=usedGetter ? usedGetter() : new Set();
     pickerList.innerHTML="";
     // pulsante svuota
     const clr=document.createElement("button"); clr.type="button"; clr.className="pbtn clear";
@@ -950,24 +1004,83 @@
     }).catch(()=>alert("Non riesco a generare l'immagine: serve una connessione a internet."));
   });
 
-  // ---- CAMBIO TAB ----
-  const vForm=document.getElementById("viewFormazione"), vCorner=document.getElementById("viewCorner");
-  const tabForm=document.getElementById("tabFormazione"), tabCor=document.getElementById("tabCorner");
-  function showView(v){
-    const corner=(v==="corner");
-    vForm.hidden=corner; vCorner.hidden=!corner;
-    tabForm.classList.toggle("active",!corner); tabCor.classList.toggle("active",corner);
-    store.view=v; save();
-    if(corner) buildCorner();
+  // ---- TATTICA (campo intero: nostri 11 + 11 avversari) ----
+  const tacticpitch = document.getElementById("tacticpitch");
+  const OUR_POS = [
+    {x:50,y:92},
+    {x:20,y:76},{x:40,y:76},{x:60,y:76},{x:80,y:76},
+    {x:25,y:60},{x:50,y:60},{x:75,y:60},
+    {x:30,y:46},{x:50,y:46},{x:70,y:46}
+  ];
+  const OPP_POS = [
+    {x:50,y:8},
+    {x:20,y:24},{x:40,y:24},{x:60,y:24},{x:80,y:24},
+    {x:25,y:40},{x:50,y:40},{x:75,y:40},
+    {x:30,y:54},{x:50,y:54},{x:70,y:54}
+  ];
+  function defaultTactic(){
+    const names=fieldNames(); const p={}, opp={};
+    for(let i=0;i<11;i++) p[i]={x:OUR_POS[i].x, y:OUR_POS[i].y, name:names[i]||""};
+    for(let i=0;i<11;i++) opp[i]={x:OPP_POS[i].x, y:OPP_POS[i].y};
+    return {p, opp, ball:{x:50,y:50}};
   }
-  tabForm.addEventListener("click",()=>showView("form"));
-  tabCor.addEventListener("click",()=>showView("corner"));
+  function buildTactic(){
+    if(!store.tactic) store.tactic=defaultTactic();
+    if(!store.tactic.opp) store.tactic.opp={};
+    tacticpitch.querySelectorAll(".ctoken,.cball").forEach(e=>e.remove());
+    const usedGetter=()=>new Set(Object.values(store.tactic.p).map(o=>o.name).filter(Boolean));
+    for(let i=0;i<11;i++){
+      if(!store.tactic.p[i]) store.tactic.p[i]={x:OUR_POS[i].x,y:OUR_POS[i].y,name:""};
+      makePlayerToken(tacticpitch, store.tactic.p[i], usedGetter);
+    }
+    for(let i=0;i<11;i++){
+      if(!store.tactic.opp[i]) store.tactic.opp[i]={x:OPP_POS[i].x,y:OPP_POS[i].y};
+      makeOppToken(tacticpitch, store.tactic.opp[i], i+1);
+    }
+    makeBall(tacticpitch, store.tactic.ball);
+  }
+  document.getElementById("tacticSync").addEventListener("click",()=>{
+    if(!store.tactic) store.tactic=defaultTactic();
+    const names=fieldNames();
+    for(let i=0;i<11;i++){ if(!store.tactic.p[i]) store.tactic.p[i]={x:OUR_POS[i].x,y:OUR_POS[i].y}; store.tactic.p[i].name=names[i]||""; }
+    save(); buildTactic();
+  });
+  document.getElementById("tacticReset").addEventListener("click",()=>{
+    store.tactic=defaultTactic(); save(); buildTactic();
+  });
+  document.getElementById("tacticExport").addEventListener("click",()=>{
+    const target=document.querySelector("#viewTactic .pitch-card");
+    const bg=getComputedStyle(document.body).backgroundColor;
+    loadHtml2Canvas().then(h2c=>h2c(target,{backgroundColor:bg,scale:2})).then(canvas=>{
+      exportImg.src=canvas.toDataURL("image/png"); overlay.classList.add("on");
+    }).catch(()=>alert("Non riesco a generare l'immagine: serve una connessione a internet."));
+  });
+
+  // ---- CAMBIO TAB ----
+  const views={
+    form:  {el:document.getElementById("viewFormazione"), tab:document.getElementById("tabFormazione")},
+    corner:{el:document.getElementById("viewCorner"),     tab:document.getElementById("tabCorner")},
+    tactic:{el:document.getElementById("viewTactic"),     tab:document.getElementById("tabTactic")}
+  };
+  function showView(v){
+    if(!views[v]) v="form";
+    Object.keys(views).forEach(k=>{
+      views[k].el.hidden=(k!==v);
+      views[k].tab.classList.toggle("active",k===v);
+    });
+    store.view=v; save();
+    if(v==="corner") buildCorner();
+    if(v==="tactic") buildTactic();
+  }
+  views.form.tab.addEventListener("click",()=>showView("form"));
+  views.corner.tab.addEventListener("click",()=>showView("corner"));
+  views.tactic.tab.addEventListener("click",()=>showView("tactic"));
 
   buildBench();
   buildField(currentModule);
   if(store.pos && store.pos[currentModule]) syncModuleDropdown();
   buildConv();
-  showView(store.view==="corner" ? "corner" : "form");
+  showView(store.view || "form");
 </script>
 
 </body>

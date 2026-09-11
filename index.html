@@ -898,7 +898,15 @@
   }
   function setMode(m){
     if(!store.corner) store.corner=defaultCorner();
-    store.corner.mode=m; save(); buildCorner();
+    if(!store.corner.kicker) store.corner.kicker={x:5,y:5,name:""};
+    const prev=store.corner.mode;
+    store.corner.mode=m;
+    // entrando in Offensivo: battitore sulla bandierina, palla accanto
+    if(m==="off" && prev!=="off"){
+      store.corner.kicker.x=5; store.corner.kicker.y=5;
+      store.corner.ball.x=12; store.corner.ball.y=8;
+    }
+    save(); buildCorner();
   }
   document.getElementById("modeDif").addEventListener("click",()=>setMode("dif"));
   document.getElementById("modeOff").addEventListener("click",()=>setMode("off"));

@@ -237,12 +237,22 @@
 
   .ctoken{position:absolute;z-index:2;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;width:clamp(52px,15vw,92px);}
   .cjersey{
-    width:clamp(30px,7.6vw,42px);height:clamp(30px,7.6vw,42px);border-radius:50%;background:var(--d);
+    width:clamp(30px,7.6vw,42px);height:clamp(30px,7.6vw,42px);border-radius:50%;background:var(--bench);
     color:#fff;border:2px solid rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;
     font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:clamp(10px,2.7vw,14px);
     box-shadow:0 3px 7px rgba(0,0,0,.35);cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;transition:transform .08s;
   }
+  .cjersey.role-P{background:var(--p);}
+  .cjersey.role-D{background:var(--d);}
+  .cjersey.role-C{background:var(--c);}
+  .cjersey.role-A{background:var(--a);}
+  .cjersey.kicker{box-shadow:0 0 0 3px #f5c518,0 3px 7px rgba(0,0,0,.4);}
   .cjersey.grabbing{cursor:grabbing;transform:scale(1.16);z-index:5;box-shadow:0 6px 14px rgba(0,0,0,.5);}
+  .segmented{display:flex;gap:5px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:4px;}
+  .segbtn{font-family:"Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.06em;font-size:13px;font-weight:600;padding:9px 13px;border:none;border-radius:9px;background:transparent;color:var(--muted);cursor:pointer;}
+  .segbtn.active{background:var(--accent);color:var(--accent-ink);}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:12.5px;color:var(--muted);margin-bottom:10px;}
+  .legend span.cdot{margin-right:5px;}
   .cball{
     position:absolute;z-index:3;transform:translate(-50%,-50%);
     font-size:clamp(19px,5.5vw,30px);line-height:1;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;
@@ -357,6 +367,10 @@
   <div id="viewCorner" hidden>
     <div class="eyebrow" style="margin-bottom:10px">Calci d'angolo</div>
     <div class="toolbar">
+      <div class="segmented">
+        <button id="modeDif" class="segbtn active" type="button">Difensivo</button>
+        <button id="modeOff" class="segbtn" type="button">Offensivo</button>
+      </div>
       <div class="spacer"></div>
       <button id="cornerSync" type="button">Riprendi formazione</button>
       <button id="cornerReset" type="button">Reset board</button>
@@ -377,12 +391,19 @@
     </div>
     <div class="card">
       <h3>Come funziona</h3>
+      <div class="legend">
+        <span><span class="cdot P"></span>Portiere</span>
+        <span><span class="cdot D"></span>Difensore</span>
+        <span><span class="cdot C"></span>Centrocampista</span>
+        <span><span class="cdot A"></span>Attaccante</span>
+      </div>
       <p class="hint">
-        Mezzo campo per gli angoli. Trascina col dito le pedine dove vuoi, senza vincoli di ruolo,
-        per impostare la disposizione in fase di attacco o di difesa sul corner. Sposta la palla
-        sulla bandierina. Le pedine partono dagli 11 titolari della formazione: con "Riprendi
-        formazione" le riallinei ai titolari attuali, con "Reset board" torni alla disposizione
-        iniziale. Tutto resta salvato sul dispositivo.
+        Mezzo campo per gli angoli. Le pedine sono colorate per ruolo. Con i pulsanti "Difensivo" e
+        "Offensivo" scegli la fase: in modalita offensiva compare il battitore (pedina con bordo
+        giallo) da posizionare sulla bandierina. Trascina col dito le pedine e la palla dove vuoi;
+        restano sempre dentro i bordi del campo. Le pedine partono dagli 11 titolari: "Riprendi
+        formazione" riallinea i nomi, "Reset board" torna alla disposizione iniziale. Tutto resta
+        salvato sul dispositivo.
       </p>
     </div>
   </div><!-- /viewCorner -->
@@ -410,6 +431,9 @@
   };
   const ALL = [...players.P, ...players.D, ...players.C, ...players.A];   // tutti
   const OUTFIELD = [...players.D, ...players.C, ...players.A];            // tutti tranne portieri
+  const ROLE_OF = {};
+  Object.entries(players).forEach(([r,arr])=>arr.forEach(n=>ROLE_OF[n]=r));
+  function roleOf(name){ return ROLE_OF[name]||null; }
   const BENCH_SLOTS = 6;
   const TOTAL = ALL.length;
 
@@ -791,7 +815,11 @@
   function defaultCorner(){
     const names=fieldNames(); const p={};
     for(let i=0;i<11;i++) p[i]={x:CORNER_POS[i].x, y:CORNER_POS[i].y, name:names[i]||""};
-    return {p, ball:{x:6,y:6}};
+    return {p, ball:{x:6,y:6}, mode:"dif", kicker:{x:5,y:6,name:""}};
+  }
+  function cjerseyClass(name,isKicker){
+    const r=roleOf(name);
+    return "cjersey"+(r?(" role-"+r):"")+(isKicker?" kicker":"");
   }
   function attachDragGeneric(handle, target, onEnd){
     let dragging=false;
@@ -811,40 +839,48 @@
     handle.addEventListener("pointercancel",end);
   }
   function refreshCorner(){
-    const used=new Set(Object.values(store.corner.p).map(o=>o.name).filter(Boolean));
-    halfpitch.querySelectorAll(".c-select").forEach(sel=>{
-      const cur=store.corner.p[sel.dataset.i].name||"";
+    const selects=[...halfpitch.querySelectorAll(".c-select")];
+    const used=new Set(selects.map(s=>s._cur).filter(Boolean));
+    selects.forEach(sel=>{
+      const cur=sel._cur||"";
       sel.innerHTML="";
       const e=document.createElement("option"); e.value=""; e.textContent="— vuoto —"; sel.appendChild(e);
       ALL.forEach(p=>{
         const o=document.createElement("option"); o.value=p; o.textContent=p;
-        if(used.has(p)&&p!==cur){ o.disabled=true; o.textContent=p+" (in campo)"; }
+        if(used.has(p)&&p!==cur){ o.disabled=true; o.textContent=p+" (schierato)"; }
         sel.appendChild(o);
       });
       sel.value=cur;
     });
   }
+  // crea una pedina trascinabile (giocatore o battitore); rec = oggetto stato con x,y,name
+  function makeCToken(rec, isKicker){
+    const t=document.createElement("div"); t.className="ctoken";
+    t.style.left=rec.x+"%"; t.style.top=rec.y+"%";
+    const j=document.createElement("div"); j.className=cjerseyClass(rec.name,isKicker);
+    j.textContent = rec.name ? initials(rec.name) : (isKicker?"B":"");
+    const sel=document.createElement("select"); sel.className="c-select"; sel._cur=rec.name||"";
+    sel.addEventListener("change",()=>{
+      rec.name=sel.value; sel._cur=sel.value;
+      j.className=cjerseyClass(sel.value,isKicker);
+      j.textContent = sel.value ? initials(sel.value) : (isKicker?"B":"");
+      refreshCorner(); save();
+    });
+    attachDragGeneric(j, t, ()=>{
+      rec.x=parseFloat(t.style.left); rec.y=parseFloat(t.style.top); save();
+    });
+    t.appendChild(j); t.appendChild(sel); halfpitch.appendChild(t);
+  }
   function buildCorner(){
     if(!store.corner) store.corner=defaultCorner();
+    if(!store.corner.kicker) store.corner.kicker={x:5,y:6,name:""};
+    if(!store.corner.mode) store.corner.mode="dif";
     halfpitch.querySelectorAll(".ctoken,.cball").forEach(e=>e.remove());
     for(let i=0;i<11;i++){
-      const d=store.corner.p[i] || (store.corner.p[i]={x:CORNER_POS[i].x,y:CORNER_POS[i].y,name:""});
-      const t=document.createElement("div"); t.className="ctoken";
-      t.style.left=d.x+"%"; t.style.top=d.y+"%";
-      const j=document.createElement("div"); j.className="cjersey";
-      const sel=document.createElement("select"); sel.className="c-select"; sel.dataset.i=i;
-      j.textContent = d.name ? initials(d.name) : "";
-      sel.addEventListener("change",()=>{
-        store.corner.p[i].name=sel.value;
-        j.textContent = sel.value ? initials(sel.value) : "";
-        refreshCorner(); save();
-      });
-      attachDragGeneric(j, t, ()=>{
-        store.corner.p[i].x=parseFloat(t.style.left);
-        store.corner.p[i].y=parseFloat(t.style.top); save();
-      });
-      t.appendChild(j); t.appendChild(sel); halfpitch.appendChild(t);
+      if(!store.corner.p[i]) store.corner.p[i]={x:CORNER_POS[i].x,y:CORNER_POS[i].y,name:""};
+      makeCToken(store.corner.p[i], false);
     }
+    if(store.corner.mode==="off") makeCToken(store.corner.kicker, true);
     const b=document.createElement("div"); b.className="cball"; b.textContent="⚽";
     b.style.left=store.corner.ball.x+"%"; b.style.top=store.corner.ball.y+"%";
     attachDragGeneric(b, b, ()=>{
@@ -852,8 +888,20 @@
       store.corner.ball.y=parseFloat(b.style.top); save();
     });
     halfpitch.appendChild(b);
+    reflectMode();
     refreshCorner();
   }
+  function reflectMode(){
+    const off = store.corner && store.corner.mode==="off";
+    document.getElementById("modeDif").classList.toggle("active", !off);
+    document.getElementById("modeOff").classList.toggle("active", !!off);
+  }
+  function setMode(m){
+    if(!store.corner) store.corner=defaultCorner();
+    store.corner.mode=m; save(); buildCorner();
+  }
+  document.getElementById("modeDif").addEventListener("click",()=>setMode("dif"));
+  document.getElementById("modeOff").addEventListener("click",()=>setMode("off"));
   document.getElementById("cornerSync").addEventListener("click",()=>{
     if(!store.corner) store.corner=defaultCorner();
     const names=fieldNames();
@@ -861,7 +909,8 @@
     save(); buildCorner();
   });
   document.getElementById("cornerReset").addEventListener("click",()=>{
-    store.corner=defaultCorner(); save(); buildCorner();
+    const m=(store.corner&&store.corner.mode)||"dif";
+    store.corner=defaultCorner(); store.corner.mode=m; save(); buildCorner();
   });
   document.getElementById("cornerExport").addEventListener("click",()=>{
     const target=document.querySelector("#viewCorner .pitch-card");

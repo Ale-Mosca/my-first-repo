@@ -371,6 +371,10 @@
         <button id="modeDif" class="segbtn active" type="button">Difensivo</button>
         <button id="modeOff" class="segbtn" type="button">Offensivo</button>
       </div>
+      <div class="segmented">
+        <button id="sideL" class="segbtn active" type="button">Angolo Sx</button>
+        <button id="sideR" class="segbtn" type="button">Angolo Dx</button>
+      </div>
       <div class="spacer"></div>
       <button id="cornerSync" type="button">Riprendi formazione</button>
       <button id="cornerReset" type="button">Reset board</button>
@@ -398,12 +402,12 @@
         <span><span class="cdot A"></span>Attaccante</span>
       </div>
       <p class="hint">
-        Mezzo campo per gli angoli. Le pedine sono colorate per ruolo. Con i pulsanti "Difensivo" e
-        "Offensivo" scegli la fase: in modalita offensiva compare il battitore (pedina con bordo
-        giallo) da posizionare sulla bandierina. Trascina col dito le pedine e la palla dove vuoi;
-        restano sempre dentro i bordi del campo. Le pedine partono dagli 11 titolari: "Riprendi
-        formazione" riallinea i nomi, "Reset board" torna alla disposizione iniziale. Tutto resta
-        salvato sul dispositivo.
+        Mezzo campo per gli angoli. Le pedine sono colorate per ruolo. Con "Difensivo/Offensivo"
+        scegli la fase e con "Angolo Sx/Dx" scegli il lato: la palla si porta da sola sulla
+        bandierina scelta, poi trascini tu uno dei titolari a battere. Trascina col dito le pedine e
+        la palla dove vuoi; restano sempre dentro i bordi del campo. Le pedine partono dagli 11
+        titolari: "Riprendi formazione" riallinea i nomi, "Reset board" torna alla disposizione
+        iniziale. Tutto resta salvato sul dispositivo.
       </p>
     </div>
   </div><!-- /viewCorner -->
@@ -812,14 +816,15 @@
   function fieldNames(){
     return [...pitch.querySelectorAll(".slot .pl-select")].map(s=>s.value||"");
   }
+  const BALL_CORNER = { L:{x:5,y:5}, R:{x:95,y:5} };
   function defaultCorner(){
     const names=fieldNames(); const p={};
     for(let i=0;i<11;i++) p[i]={x:CORNER_POS[i].x, y:CORNER_POS[i].y, name:names[i]||""};
-    return {p, ball:{x:6,y:6}, mode:"dif", kicker:{x:5,y:6,name:""}};
+    return {p, ball:{x:5,y:5}, mode:"dif", side:"L"};
   }
-  function cjerseyClass(name,isKicker){
+  function cjerseyClass(name){
     const r=roleOf(name);
-    return "cjersey"+(r?(" role-"+r):"")+(isKicker?" kicker":"");
+    return "cjersey"+(r?(" role-"+r):"");
   }
   function attachDragGeneric(handle, target, onEnd){
     let dragging=false;
@@ -854,16 +859,16 @@
     });
   }
   // crea una pedina trascinabile (giocatore o battitore); rec = oggetto stato con x,y,name
-  function makeCToken(rec, isKicker){
+  function makeCToken(rec){
     const t=document.createElement("div"); t.className="ctoken";
     t.style.left=rec.x+"%"; t.style.top=rec.y+"%";
-    const j=document.createElement("div"); j.className=cjerseyClass(rec.name,isKicker);
-    j.textContent = rec.name ? initials(rec.name) : (isKicker?"B":"");
+    const j=document.createElement("div"); j.className=cjerseyClass(rec.name);
+    j.textContent = rec.name ? initials(rec.name) : "";
     const sel=document.createElement("select"); sel.className="c-select"; sel._cur=rec.name||"";
     sel.addEventListener("change",()=>{
       rec.name=sel.value; sel._cur=sel.value;
-      j.className=cjerseyClass(sel.value,isKicker);
-      j.textContent = sel.value ? initials(sel.value) : (isKicker?"B":"");
+      j.className=cjerseyClass(sel.value);
+      j.textContent = sel.value ? initials(sel.value) : "";
       refreshCorner(); save();
     });
     attachDragGeneric(j, t, ()=>{
@@ -873,14 +878,13 @@
   }
   function buildCorner(){
     if(!store.corner) store.corner=defaultCorner();
-    if(!store.corner.kicker) store.corner.kicker={x:5,y:6,name:""};
     if(!store.corner.mode) store.corner.mode="dif";
+    if(!store.corner.side) store.corner.side="L";
     halfpitch.querySelectorAll(".ctoken,.cball").forEach(e=>e.remove());
     for(let i=0;i<11;i++){
       if(!store.corner.p[i]) store.corner.p[i]={x:CORNER_POS[i].x,y:CORNER_POS[i].y,name:""};
-      makeCToken(store.corner.p[i], false);
+      makeCToken(store.corner.p[i]);
     }
-    if(store.corner.mode==="off") makeCToken(store.corner.kicker, true);
     const b=document.createElement("div"); b.className="cball"; b.textContent="⚽";
     b.style.left=store.corner.ball.x+"%"; b.style.top=store.corner.ball.y+"%";
     attachDragGeneric(b, b, ()=>{
@@ -888,7 +892,7 @@
       store.corner.ball.y=parseFloat(b.style.top); save();
     });
     halfpitch.appendChild(b);
-    reflectMode();
+    reflectMode(); reflectSide();
     refreshCorner();
   }
   function reflectMode(){
@@ -896,20 +900,26 @@
     document.getElementById("modeDif").classList.toggle("active", !off);
     document.getElementById("modeOff").classList.toggle("active", !!off);
   }
+  function reflectSide(){
+    const right = store.corner && store.corner.side==="R";
+    document.getElementById("sideL").classList.toggle("active", !right);
+    document.getElementById("sideR").classList.toggle("active", !!right);
+  }
   function setMode(m){
     if(!store.corner) store.corner=defaultCorner();
-    if(!store.corner.kicker) store.corner.kicker={x:5,y:5,name:""};
-    const prev=store.corner.mode;
-    store.corner.mode=m;
-    // entrando in Offensivo: battitore sulla bandierina, palla accanto
-    if(m==="off" && prev!=="off"){
-      store.corner.kicker.x=5; store.corner.kicker.y=5;
-      store.corner.ball.x=12; store.corner.ball.y=8;
-    }
+    store.corner.mode=m; save(); buildCorner();
+  }
+  // scelta angolo: porta solo la palla nell'angolo scelto, nessun giocatore
+  function setSide(s){
+    if(!store.corner) store.corner=defaultCorner();
+    store.corner.side=s;
+    store.corner.ball={x:BALL_CORNER[s].x, y:BALL_CORNER[s].y};
     save(); buildCorner();
   }
   document.getElementById("modeDif").addEventListener("click",()=>setMode("dif"));
   document.getElementById("modeOff").addEventListener("click",()=>setMode("off"));
+  document.getElementById("sideL").addEventListener("click",()=>setSide("L"));
+  document.getElementById("sideR").addEventListener("click",()=>setSide("R"));
   document.getElementById("cornerSync").addEventListener("click",()=>{
     if(!store.corner) store.corner=defaultCorner();
     const names=fieldNames();

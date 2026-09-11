@@ -235,7 +235,13 @@
   .hp-halfline{bottom:0;left:0;right:0;height:2px;background:var(--chalk);}
   .hp-center{bottom:0;left:50%;transform:translate(-50%,50%);width:26%;aspect-ratio:1;border:2px solid var(--chalk);border-radius:50%;}
 
-  .ctoken{position:absolute;z-index:2;transform:translate(-50%,-50%);}
+  .ctoken{position:absolute;z-index:2;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .clabel{
+    font-family:"Barlow",sans-serif;font-weight:700;font-size:clamp(7px,1.9vw,9px);line-height:1.05;
+    color:#fff;background:rgba(10,16,12,.8);padding:1px 4px;border-radius:4px;
+    max-width:78px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    pointer-events:none;-webkit-user-select:none;user-select:none;
+  }
   .cjersey{
     width:clamp(26px,6.4vw,34px);height:clamp(26px,6.4vw,34px);border-radius:50%;background:var(--bench);
     color:#fff;border:2px solid rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;
@@ -865,11 +871,13 @@
     t.style.left=rec.x+"%"; t.style.top=rec.y+"%";
     const j=document.createElement("div"); j.className=cjerseyClass(rec.name);
     j.textContent = rec.name ? cInitials(rec.name) : "+";
+    const lab=document.createElement("div"); lab.className="clabel";
+    lab.textContent=rec.name||""; lab.hidden=!rec.name;
     attachDragGeneric(j, t,
       ()=>{ rec.x=parseFloat(t.style.left); rec.y=parseFloat(t.style.top); save(); },
-      ()=>openPicker(rec, j)
+      ()=>openPicker(rec, j, lab)
     );
-    t.appendChild(j); halfpitch.appendChild(t);
+    t.appendChild(j); t.appendChild(lab); halfpitch.appendChild(t);
   }
   function buildCorner(){
     if(!store.corner) store.corner=defaultCorner();
@@ -891,13 +899,13 @@
   const cpicker=document.getElementById("cpicker");
   const pickerList=document.getElementById("pickerList");
   const ROLE_LABEL={P:"Portieri",D:"Difensori",C:"Centrocampisti",A:"Attaccanti"};
-  function openPicker(rec, jersey){
+  function openPicker(rec, jersey, label){
     const used=new Set(Object.values(store.corner.p).map(o=>o.name).filter(Boolean));
     pickerList.innerHTML="";
     // pulsante svuota
     const clr=document.createElement("button"); clr.type="button"; clr.className="pbtn clear";
     clr.textContent="— vuoto —";
-    clr.addEventListener("click",()=>assign(rec,jersey,""));
+    clr.addEventListener("click",()=>assign(rec,jersey,label,""));
     const clrWrap=document.createElement("div"); clrWrap.className="picker-players"; clrWrap.appendChild(clr);
     pickerList.appendChild(clrWrap);
     ["P","D","C","A"].forEach(r=>{
@@ -909,17 +917,18 @@
         bt.textContent=n;
         if(n===rec.name) bt.classList.add("current");
         else if(used.has(n)){ bt.classList.add("used"); bt.disabled=true; }
-        bt.addEventListener("click",()=>assign(rec,jersey,n));
+        bt.addEventListener("click",()=>assign(rec,jersey,label,n));
         wrap.appendChild(bt);
       });
       pickerList.appendChild(gt); pickerList.appendChild(wrap);
     });
     cpicker.classList.add("on");
   }
-  function assign(rec, jersey, name){
+  function assign(rec, jersey, label, name){
     rec.name=name;
     jersey.className=cjerseyClass(name);
     jersey.textContent = name ? cInitials(name) : "+";
+    label.textContent = name || ""; label.hidden = !name;
     save(); cpicker.classList.remove("on");
   }
   document.getElementById("pickerClose").addEventListener("click",()=>cpicker.classList.remove("on"));

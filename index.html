@@ -242,6 +242,8 @@
     max-width:78px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     pointer-events:none;-webkit-user-select:none;user-select:none;
   }
+  .clabel.handle{pointer-events:auto;cursor:grab;touch-action:none;padding:3px 7px;}
+  .clabel.handle.grabbing{cursor:grabbing;transform:scale(1.08);background:rgba(10,16,12,.95);}
   .cjersey{
     width:clamp(26px,6.4vw,34px);height:clamp(26px,6.4vw,34px);border-radius:50%;background:var(--bench);
     color:#fff;border:2px solid rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;
@@ -407,18 +409,12 @@
     </div>
     <div class="card">
       <h3>Come funziona</h3>
-      <div class="legend">
-        <span><span class="cdot P"></span>Portiere</span>
-        <span><span class="cdot D"></span>Difensore</span>
-        <span><span class="cdot C"></span>Centrocampista</span>
-        <span><span class="cdot A"></span>Attaccante</span>
-      </div>
       <p class="hint">
-        Mezzo campo per gli angoli. Le pedine sono cerchietti compatti colorati per ruolo con la
-        sigla del cognome. Trascinale col dito per spostarle; toccale (senza trascinare) per
-        aprire il selettore e assegnare il giocatore. Le pedine e la palla restano sempre dentro i
-        bordi del campo. Si parte dagli 11 titolari: "Riprendi formazione" riallinea i nomi, "Reset
-        board" torna alla disposizione iniziale. Tutto resta salvato sul dispositivo.
+        Mezzo campo per gli angoli. Ogni giocatore e mostrato come etichetta col cognome.
+        Trascinala col dito per spostarla; toccala (senza trascinare) per aprire il selettore e
+        cambiare giocatore. Etichette e palla restano sempre dentro i bordi del campo. Si parte
+        dagli 11 titolari: "Riprendi formazione" riallinea i nomi, "Reset board" torna alla
+        disposizione iniziale. Tutto resta salvato sul dispositivo.
       </p>
     </div>
   </div><!-- /viewCorner -->
@@ -906,19 +902,29 @@
     handle.addEventListener("pointerup",end);
     handle.addEventListener("pointercancel",end);
   }
-  // pedina nostra: cerchietto colorato per ruolo con sigla + etichetta; tap apre il selettore
-  function makePlayerToken(container, rec, usedGetter){
+  // pedina nostra. labelOnly = solo etichetta col cognome (calci piazzati)
+  function makePlayerToken(container, rec, usedGetter, labelOnly){
     const t=document.createElement("div"); t.className="ctoken";
     t.style.left=rec.x+"%"; t.style.top=rec.y+"%";
-    const j=document.createElement("div"); j.className=cjerseyClass(rec.name);
-    j.textContent = rec.name ? cInitials(rec.name) : "+";
-    const lab=document.createElement("div"); lab.className="clabel";
-    lab.textContent=rec.name||""; lab.hidden=!rec.name;
-    attachDragGeneric(j, t, container,
+    let render, handle;
+    if(labelOnly){
+      const lab=document.createElement("div"); lab.className="clabel handle";
+      lab.textContent = rec.name || "+";
+      t.appendChild(lab); handle=lab;
+      render=(name)=>{ lab.textContent = name || "+"; };
+    } else {
+      const j=document.createElement("div"); j.className=cjerseyClass(rec.name);
+      j.textContent = rec.name ? cInitials(rec.name) : "+";
+      const lab=document.createElement("div"); lab.className="clabel";
+      lab.textContent=rec.name||""; lab.hidden=!rec.name;
+      t.appendChild(j); t.appendChild(lab); handle=j;
+      render=(name)=>{ j.className=cjerseyClass(name); j.textContent=name?cInitials(name):"+"; lab.textContent=name||""; lab.hidden=!name; };
+    }
+    attachDragGeneric(handle, t, container,
       ()=>{ rec.x=parseFloat(t.style.left); rec.y=parseFloat(t.style.top); save(); },
-      ()=>openPicker(rec, j, lab, usedGetter)
+      ()=>openPicker(rec, render, usedGetter)
     );
-    t.appendChild(j); t.appendChild(lab); container.appendChild(t);
+    container.appendChild(t);
   }
   // pedina avversaria: cerchietto scuro numerato, solo trascinabile
   function makeOppToken(container, rec, num){
@@ -944,7 +950,7 @@
     const usedGetter=()=>new Set(Object.values(store.corner.p).map(o=>o.name).filter(Boolean));
     for(let i=0;i<11;i++){
       if(!store.corner.p[i]) store.corner.p[i]={x:CORNER_POS[i].x,y:CORNER_POS[i].y,name:""};
-      makePlayerToken(halfpitch, store.corner.p[i], usedGetter);
+      makePlayerToken(halfpitch, store.corner.p[i], usedGetter, true);
     }
     makeBall(halfpitch, store.corner.ball);
   }
@@ -953,13 +959,13 @@
   const cpicker=document.getElementById("cpicker");
   const pickerList=document.getElementById("pickerList");
   const ROLE_LABEL={P:"Portieri",D:"Difensori",C:"Centrocampisti",A:"Attaccanti"};
-  function openPicker(rec, jersey, label, usedGetter){
+  function openPicker(rec, render, usedGetter){
     const used=usedGetter ? usedGetter() : new Set();
     pickerList.innerHTML="";
     // pulsante svuota
     const clr=document.createElement("button"); clr.type="button"; clr.className="pbtn clear";
     clr.textContent="— vuoto —";
-    clr.addEventListener("click",()=>assign(rec,jersey,label,""));
+    clr.addEventListener("click",()=>pick(rec,render,""));
     const clrWrap=document.createElement("div"); clrWrap.className="picker-players"; clrWrap.appendChild(clr);
     pickerList.appendChild(clrWrap);
     ["P","D","C","A"].forEach(r=>{
@@ -971,19 +977,15 @@
         bt.textContent=n;
         if(n===rec.name) bt.classList.add("current");
         else if(used.has(n)){ bt.classList.add("used"); bt.disabled=true; }
-        bt.addEventListener("click",()=>assign(rec,jersey,label,n));
+        bt.addEventListener("click",()=>pick(rec,render,n));
         wrap.appendChild(bt);
       });
       pickerList.appendChild(gt); pickerList.appendChild(wrap);
     });
     cpicker.classList.add("on");
   }
-  function assign(rec, jersey, label, name){
-    rec.name=name;
-    jersey.className=cjerseyClass(name);
-    jersey.textContent = name ? cInitials(name) : "+";
-    label.textContent = name || ""; label.hidden = !name;
-    save(); cpicker.classList.remove("on");
+  function pick(rec, render, name){
+    rec.name=name; render(name); save(); cpicker.classList.remove("on");
   }
   document.getElementById("pickerClose").addEventListener("click",()=>cpicker.classList.remove("on"));
   cpicker.addEventListener("click",e=>{ if(e.target===cpicker) cpicker.classList.remove("on"); });

@@ -539,6 +539,16 @@
   ];
   function matchVenue(m){ return m.casa ? CM_HOME : {campo:m.campo, via:m.via}; }
   function matchTitle(m){ return m.casa ? ("Cesano Maderno - "+m.opp) : (m.opp+" - Cesano Maderno"); }
+  const SEASON_START=2026; // anno del girone di andata (set-dic); ritorno = anno successivo
+  function matchDate(m){
+    const p=m.date.split("/").map(Number);
+    const y = p[1]>=7 ? SEASON_START : SEASON_START+1;
+    return new Date(y, p[1]-1, p[0]);
+  }
+  function isUpcoming(m){
+    const t=new Date(); t.setHours(0,0,0,0);
+    return matchDate(m) >= t;   // la gara resta finche non e passata la sua data
+  }
   const BENCH_SLOTS = 6;
   const TOTAL = ALL.length;
 
@@ -1138,8 +1148,17 @@
   const matchSelect=document.getElementById("matchSelect");
   (function buildMatchOptions(){
     const none=document.createElement("option"); none.value=""; none.textContent="— nessuna partita —"; matchSelect.appendChild(none);
-    MATCHES.forEach((m,i)=>{ const o=document.createElement("option"); o.value=String(i); o.textContent=m.d+" · "+m.date+" · "+matchTitle(m); matchSelect.appendChild(o); });
-    matchSelect.value=(store.matchId!=null?store.matchId:"");
+    let visible=0;
+    MATCHES.forEach((m,i)=>{
+      if(!isUpcoming(m)) return;                 // le gare gia giocate spariscono
+      const o=document.createElement("option"); o.value=String(i);
+      o.textContent=m.d+" · "+m.date+" · "+matchTitle(m); matchSelect.appendChild(o); visible++;
+    });
+    // se la partita salvata e ormai passata (o non piu in elenco), azzera la scelta
+    const cur=store.matchId;
+    const stillThere = cur!=null && cur!=="" && MATCHES[+cur] && isUpcoming(MATCHES[+cur]);
+    if(!stillThere){ store.matchId=""; save(); }
+    matchSelect.value=store.matchId||"";
     matchSelect.addEventListener("change",()=>{ store.matchId=matchSelect.value; save(); });
   })();
 

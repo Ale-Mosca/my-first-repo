@@ -187,6 +187,9 @@
   .conv-head h3{margin:0;}
   .conv-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
   .conv-count{font-weight:600;color:var(--muted);font-size:14px;}
+  .conv-match-row{display:flex;flex-direction:column;gap:5px;margin-bottom:16px;}
+  .conv-match-row label{font-family:"Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:600;color:var(--muted);}
+  .conv-match-row select{width:100%;max-width:460px;}
   .conv-actions button{font-size:14px;padding:9px 13px;}
   .conv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;}
   .conv-block{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel);}
@@ -216,6 +219,9 @@
   #convSheet .cs-list li:last-child{border-bottom:none;}
   #convSheet .cs-list .num{width:21px;height:21px;border-radius:50%;background:#e7efe9;color:#33443a;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;}
   #convSheet .cs-list .none{color:#9aa79e;font-style:italic;font-weight:500;}
+  #convSheet .cs-match{background:rgba(255,255,255,.14);border-radius:10px;padding:11px 15px;margin-bottom:16px;}
+  #convSheet .cs-match-t{font-family:"Barlow Condensed",sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.02em;font-size:23px;line-height:1.05;}
+  #convSheet .cs-match-s{font-size:14px;color:#dff0e4;margin-top:4px;}
   #convSheet .cs-foot{margin-top:16px;text-align:right;font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:20px;letter-spacing:.04em;}
 
   /* CALCI PIAZZATI - mezzo campo */
@@ -382,6 +388,10 @@
         <button id="convExport" class="primary" type="button">Esporta convocati</button>
       </div>
     </div>
+    <div class="conv-match-row">
+      <label for="matchSelect">Partita</label>
+      <select id="matchSelect" class="module"></select>
+    </div>
     <div class="conv-grid" id="convGrid"></div>
   </section>
   </div><!-- /viewFormazione -->
@@ -491,6 +501,44 @@
   const ROLE_OF = {};
   Object.entries(players).forEach(([r,arr])=>arr.forEach(n=>ROLE_OF[n]=r));
   function roleOf(name){ return ROLE_OF[name]||null; }
+
+  // Calendario Cesano Maderno - Seconda Categoria Girone R Monza Brianza (fonte: tuttocampo.it)
+  // casa=true: campo Comunale M. Vaghi, Cesano Maderno. casa=false: campo dell'avversario.
+  const CM_HOME={campo:"Comunale M. Vaghi",via:"Via Po, Cesano Maderno"};
+  const MATCHES=[
+    {d:"1ª",date:"13/09",casa:true, opp:"Calcio Misinto 1971"},
+    {d:"2ª",date:"19/09",casa:false,opp:"Atletico FC 1999",campo:"Centro Sportivo Cesate",via:"Via Dante Alighieri, 72, Cesate"},
+    {d:"3ª",date:"27/09",casa:true, opp:"Albiatese"},
+    {d:"4ª",date:"03/10",casa:false,opp:"Aurora Varedo",campo:"C.S. Largo Atleti Azzurri d'Italia",via:"Largo Atleti Azzurri d'Italia, Desio"},
+    {d:"5ª",date:"11/10",casa:true, opp:"Molinello"},
+    {d:"6ª",date:"18/10",casa:false,opp:"Rondò Dinamo",campo:"Centro Schiaffino",via:"Via Sondrio, 36, Paderno Dugnano"},
+    {d:"7ª",date:"25/10",casa:true, opp:"Juvenilia"},
+    {d:"8ª",date:"01/11",casa:false,opp:"Cosov",campo:"Sportivo Parrocchiale",via:"Via Vittorio Veneto, 1, Villasanta"},
+    {d:"9ª",date:"08/11",casa:true, opp:"Palazzolo Milanese"},
+    {d:"10ª",date:"15/11",casa:false,opp:"Di.Effe Football Academy",campo:"Comunale",via:"Via Fratelli Perego, 25, Cologno Monzese"},
+    {d:"11ª",date:"21/11",casa:true, opp:"Cogliatese"},
+    {d:"12ª",date:"29/11",casa:false,opp:"Gerardiana Monza",campo:"Gerastadium",via:"Via Canova, 20, Monza"},
+    {d:"13ª",date:"06/12",casa:true, opp:"Robur Ruginello"},
+    {d:"14ª",date:"13/12",casa:true, opp:"Vedano"},
+    {d:"15ª",date:"20/12",casa:false,opp:"Novedrate",campo:"Comunale Maurizio Barni",via:"Via Per Mariano Comense, Novedrate"},
+    {d:"16ª",date:"10/01",casa:false,opp:"Calcio Misinto 1971",campo:"Oratorio San Domenico Savio",via:"Via Birago, 10, Misinto"},
+    {d:"17ª",date:"17/01",casa:true, opp:"Atletico FC 1999"},
+    {d:"18ª",date:"24/01",casa:false,opp:"Albiatese",campo:"C.s. Comunale Sovico",via:"Via Santa Caterina da Siena, 1, Sovico"},
+    {d:"19ª",date:"31/01",casa:true, opp:"Aurora Varedo"},
+    {d:"20ª",date:"07/02",casa:false,opp:"Molinello",campo:"Centro Sportivo Comunale N°2",via:"Via Po, 55, Cesano Maderno"},
+    {d:"21ª",date:"14/02",casa:true, opp:"Rondò Dinamo"},
+    {d:"22ª",date:"21/02",casa:false,opp:"Juvenilia",campo:"Comunale G.A. Sada",via:"Via Guarenti, Monza"},
+    {d:"23ª",date:"28/02",casa:true, opp:"Cosov"},
+    {d:"24ª",date:"07/03",casa:false,opp:"Palazzolo Milanese",campo:"Remo Artioli",via:"Via Como, 46, Paderno Dugnano"},
+    {d:"25ª",date:"14/03",casa:true, opp:"Di.Effe Football Academy"},
+    {d:"26ª",date:"21/03",casa:false,opp:"Cogliatese",campo:"Centro Sportivo Comunale",via:"Via Montello, Cogliate"},
+    {d:"27ª",date:"04/04",casa:true, opp:"Gerardiana Monza"},
+    {d:"28ª",date:"11/04",casa:false,opp:"Robur Ruginello",campo:"C.S. Comunale",via:"Via Monte Rosa, Arcore"},
+    {d:"29ª",date:"18/04",casa:false,opp:"Vedano",campo:"Parco",via:"Via E. Ferrari, Vedano al Lambro"},
+    {d:"30ª",date:"25/04",casa:true, opp:"Novedrate"}
+  ];
+  function matchVenue(m){ return m.casa ? CM_HOME : {campo:m.campo, via:m.via}; }
+  function matchTitle(m){ return m.casa ? ("Cesano Maderno - "+m.opp) : (m.opp+" - Cesano Maderno"); }
   const BENCH_SLOTS = 6;
   const TOTAL = ALL.length;
 
@@ -821,11 +869,20 @@
     });
     const d=new Date();
     const dd=String(d.getDate()).padStart(2,"0"), mm=String(d.getMonth()+1).padStart(2,"0"), yy=d.getFullYear();
+    let matchHtml="";
+    const mi=store.matchId;
+    if(mi!=null && mi!=="" && MATCHES[+mi]){
+      const m=MATCHES[+mi], v=matchVenue(m);
+      matchHtml='<div class="cs-match"><div class="cs-match-t">'+matchTitle(m)+'</div>'+
+                '<div class="cs-match-s">'+m.d+' giornata · '+m.date+' · '+(m.casa?'Casa':'Trasferta')+
+                ' · Campo: '+v.campo+' - '+v.via+'</div></div>';
+    }
     convSheet.innerHTML=
       '<div class="cs-top"><div class="cs-ball">⚽</div><div>'+
       '<div class="cs-team">Cesano Maderno</div>'+
       '<div class="cs-sub">Distinta convocati · Stagione 26/27</div></div>'+
       '<div class="cs-date">'+dd+'/'+mm+'/'+yy+'</div></div>'+
+      matchHtml+
       '<div class="cs-panel">'+blocks+'</div>'+
       '<div class="cs-foot">Totale convocati: <b>'+total+'</b></div>';
     return total;
@@ -1076,6 +1133,15 @@
   views.form.tab.addEventListener("click",()=>showView("form"));
   views.corner.tab.addEventListener("click",()=>showView("corner"));
   views.tactic.tab.addEventListener("click",()=>showView("tactic"));
+
+  // dropdown partite
+  const matchSelect=document.getElementById("matchSelect");
+  (function buildMatchOptions(){
+    const none=document.createElement("option"); none.value=""; none.textContent="— nessuna partita —"; matchSelect.appendChild(none);
+    MATCHES.forEach((m,i)=>{ const o=document.createElement("option"); o.value=String(i); o.textContent=m.d+" · "+m.date+" · "+matchTitle(m); matchSelect.appendChild(o); });
+    matchSelect.value=(store.matchId!=null?store.matchId:"");
+    matchSelect.addEventListener("change",()=>{ store.matchId=matchSelect.value; save(); });
+  })();
 
   buildBench();
   buildField(currentModule);
